@@ -186,7 +186,7 @@ def member_constituents(bg: str):
 @app.get("/api/scoreboard")
 def scoreboard(variant: str = "all", sector: str = "All business"):
     """Every member's donor-loyalty and against-constituents numbers for one evidence variant and sector, for the ranking page."""
-    if variant not in ("all", "core"):
+    if variant not in ("all", "core", "inferred", "lobbied"):
         raise HTTPException(400, "variant")
     with db() as con:
         members = rows(con, """SELECT i.bioguide AS id, i.name, i.party, i.state, i.chamber, i.last_c AS last_congress, i.first_c AS first_congress,
@@ -254,6 +254,20 @@ def allvotes_top(label: str = "", min_t: float = 3.15, limit: int = 60, offset: 
             ORDER BY abs(m.t_only) DESC LIMIT ? OFFSET ?""", [label, label, min_t, limit, offset])
         n = rows(con, "SELECT count(*) AS n FROM all_vote_money WHERE (? = '' OR label = ?) AND abs(t_only) >= ?", [label, label, min_t])[0]["n"]
     return {"rows": r, "total": n}
+
+
+@app.get("/api/member/{bg}/inferred")
+def member_inferred(bg: str):
+    """Every-vote view for one member: per industry, how they voted on votes where its money lined up strongly with the vote, plus the most surprising ones."""
+    with db() as con:
+        summ = rows(con, """SELECT sector_label AS label, votes_coded, weight, n_funded, n_funded_aligned, peers_funded_aligned AS expected, lift, se, z, money_at_stake AS money
+                            FROM scores WHERE variant = 'inferred' AND bioguide = ? ORDER BY (sector_label = 'All business') DESC, money_at_stake DESC""", [bg])
+        base = """SELECT strftime(t.vote_date, '%Y-%m-%d') AS d, a.congress, a.chamber, a.rollnumber, a.label, a.aligned, round(a.p_exp, 2) AS p_exp, a.pac_6y, a.pull_yea,
+                         round(a.t_only, 1) AS t_only, t.bill_number AS bill, t.vote_question AS q, coalesce(t.title, t.vote_desc) AS descr, t.vote_result AS result
+                  FROM inferred_alignment a LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber) WHERE a.bioguide = ? AND a.pac_6y >= 25000"""
+        with_money = rows(con, base + " AND a.aligned = 1 ORDER BY a.p_exp ASC, a.pac_6y DESC LIMIT 8", [bg])
+        against_money = rows(con, base + " AND a.aligned = 0 ORDER BY a.p_exp DESC, a.pac_6y DESC LIMIT 8", [bg])
+    return {"summary": summ, "with_money": with_money, "against_money": against_money}
 
 
 @app.get("/api/member/{bg}/sectors")

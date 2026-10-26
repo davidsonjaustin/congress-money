@@ -80,9 +80,19 @@ def build_scores() -> pd.DataFrame:
     raw = con.execute("SELECT * FROM donor_alignment").df()
     raw["label"] = [sector_label(a, b) for a, b in zip(raw["sector"], raw["subsector"])]
     frames, cov = [], []
-    for variant in ("all", "core"):
-        df = (raw if variant == "all" else raw[raw["evidence_level"].isin(CORE_LEVELS)]).copy().reset_index(drop=True)
-        df["p_exp"] = expected_alignment(df)
+    has_inferred = con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'inferred_alignment'").fetchone()[0] > 0
+    has_lobbied = has_inferred and con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'lobbied_votes'").fetchone()[0] > 0
+    for variant in ("all", "core") + (("inferred",) if has_inferred else ()) + (("lobbied",) if has_lobbied else ()):
+        if variant in ("inferred", "lobbied"):
+            # rows from 21_inferred_alignment.py: the industry's side is inferred from the money pattern and p_exp is already a cross-fitted
+            # ideology/district model, so the same-party-peer expectation is not used here. 'lobbied' keeps the votes whose bill that industry lobbied (22)
+            q = ("SELECT * FROM inferred_alignment" if variant == "inferred" else
+                 """SELECT a.* FROM inferred_alignment a WHERE EXISTS (SELECT 1 FROM lobbied_votes l WHERE l.congress = a.congress AND l.chamber = a.chamber
+                                                                       AND l.rollnumber = a.rollnumber AND l.label = a.label)""")
+            df = con.execute(q).df().reset_index(drop=True)
+        else:
+            df = (raw if variant == "all" else raw[raw["evidence_level"].isin(CORE_LEVELS)]).copy().reset_index(drop=True)
+            df["p_exp"] = expected_alignment(df)
         df["w"] = (df["pac_6y"].clip(lower=0) / FULL_FUNDING).clip(upper=1.0)
         df["resid"] = df["aligned"] - df["p_exp"]
         # 'All business' leaves out Labor so its hundreds of union-scorecard votes do not swamp the handful of business-sector votes

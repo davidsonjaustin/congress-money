@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 import { api } from '../api'
-import type { Constituent, Definitions, DonorVote, Profile, Scored, SectorLine } from '../types'
+import type { Constituent, Definitions, DonorVote, InferredVote, MemberInferred, Profile, Scored, SectorLine } from '../types'
 import { useWidth } from '../hooks'
 import { fmtLift, fmtMoney, liftRange, ordinal } from '../util'
 import { ConstituentsCard, DonorVotesCard } from './MemberView'
@@ -21,6 +21,9 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
   const [sectors, setSectors] = useState<SectorLine[]>([])
   const [cons, setCons] = useState<Constituent[]>([])
   const [sel, setSel] = useState('')
+  const [inf, setInf] = useState<MemberInferred | null>(null)
+
+  useEffect(() => { setInf(null); api.inferred(id).then(setInf).catch(() => undefined) }, [id])
 
   useEffect(() => {
     let alive = true
@@ -108,6 +111,8 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
           )}
         </div>
       </div>
+
+      {inf && inf.summary.length > 0 && <EveryVoteCard inf={inf} name={profile.name} />}
 
       {donors.length > 0 && (
         <div className="card">
@@ -235,4 +240,58 @@ function buildStory(a: { name: string; me: Scored | null; sectors: SectorLine[];
     }
   }
   return out
+}
+
+function voteTitle(v: InferredVote): string {
+  return (v.descr || v.q || v.bill || 'Vote').slice(0, 110)
+}
+
+function EveryVoteCard({ inf, name }: { inf: MemberInferred; name: string }) {
+  const first = name.split(' ')[0]
+  const all = inf.summary.find((s) => s.label === 'All business')
+  const lines = inf.summary.filter((s) => s.label !== 'All business' && s.n_funded >= 5).slice(0, 8)
+  const nice = (l: string) => (l === 'Labor' ? 'Labor unions' : l === 'oil gas' ? 'Oil and gas' : l.replace(/^./, (c) => c.toUpperCase()))
+  const list = (title: string, blurb: string, rows: InferredVote[]) => rows.length > 0 && (
+    <div>
+      <div className="fh">{title}</div>
+      <div className="hint">{blurb}</div>
+      <ul className="facts">
+        {rows.map((v) => (
+          <li key={`${v.congress}${v.chamber}${v.rollnumber}${v.label}`}>
+            {voteTitle(v)} <span className="hint">({v.d?.slice(0, 4)}, {v.chamber}{v.bill ? `, ${v.bill}` : ''})</span>: {nice(v.label)} industry had given {fmtMoney(v.pac_6y)}; ideology and district alone put the chance of voting that way at {Math.round(100 * v.p_exp)}%.
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+  return (
+    <div className="card">
+      <h2>Every vote since 2008</h2>
+      <div className="sub">
+        Votes where an industry’s money lined up strongly with how members voted, taking the side that money pulls toward. That side is inferred from the money pattern, not stated by the industry.
+      </div>
+      {all && (
+        <p className="lead">
+          On <strong>{all.n_funded}</strong> such votes where a business industry had given {first} $10K or more, they voted the way the money pulls <strong>{all.n_funded_aligned}</strong> times.
+          Their ideology, party and district alone would predict about <strong>{all.expected.toFixed(0)}</strong>. Gap: <strong>{liftRange(all.lift, all.se)}</strong>.
+        </p>
+      )}
+      {lines.length > 0 && (
+        <div className="scroll-x">
+          <table className="data">
+            <thead><tr><th style={{ textAlign: 'left' }}>Industry</th><th>Money, 6-year peak</th><th>Voted with the money</th><th>Predicted by ideology and district</th></tr></thead>
+            <tbody>
+              {lines.map((s) => (
+                <tr key={s.label}><td style={{ textAlign: 'left' }}>{nice(s.label)}</td><td>{fmtMoney(s.money)}</td><td>{s.n_funded_aligned} of {s.n_funded}</td><td>{s.expected.toFixed(0)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="threecol" style={{ marginTop: 12 }}>
+        {list('Voted with the money against their profile', 'Industry gave $25K or more, and ideology and district made this vote unlikely.', inf.with_money)}
+        {list('Voted against the money despite it', 'Industry gave $25K or more, and ideology and district made voting with it likely.', inf.against_money)}
+      </div>
+    </div>
+  )
 }

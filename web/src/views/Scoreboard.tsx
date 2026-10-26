@@ -18,8 +18,8 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
   const [era, setEra] = useState('')
   const [q, setQ] = useState('')
   const [showAll, setShowAll] = useState(false)
-  const [variant, setVariant] = useState<'all' | 'core'>('all')
-  const [sector, setSector] = useState('oil gas')
+  const [variant, setVariant] = useState<'all' | 'core' | 'inferred'>('inferred')
+  const [sector, setSector] = useState('All business')
   const [sectors, setSectors] = useState<SectorOption[]>([])
   const [sort, setSort] = useState<{ key: keyof Scored; dir: 1 | -1 }>({ key: 'loyalty', dir: -1 })
 
@@ -78,15 +78,10 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
             ))}</div>
           )}
         </div>
-        <details className="adv">
-          <summary>Advanced options</summary>
-          <div className="advrow">
-            <span className="hint">Evidence</span>
-            <div className="seg" title="Strictly sourced: only votes whose industry side comes from the industry's own statements or direct reporting.">
-              {[['all', 'All coded votes'], ['core', 'Strictly sourced only']].map(([k, l]) => <button key={k} aria-pressed={variant === k} onClick={() => setVariant(k as 'all' | 'core')}>{l}</button>)}
-            </div>
-          </div>
-        </details>
+        <div className="seg" title="Every vote: any roll call where this industry's money lines up strongly with how members voted, taking the side its money pulls toward. Documented side: votes where the industry's position is known from scorecards or its own statements. Strictly sourced: only the industry's own statements.">
+          {[['inferred', 'Every vote since 2008'], ['all', 'Documented side'], ['core', 'Strictly sourced']].map(([k, l]) => <button key={k} aria-pressed={variant === k} onClick={() => setVariant(k as 'all' | 'core' | 'inferred')}>{l}</button>)}
+        </div>
+        {variant === 'inferred' && <div className="coverage">Every-vote view: a vote counts for an industry when its money lines up strongly with how members voted, and the industry’s side is the side that money pulls toward. That side is inferred from the money pattern, not stated by the industry, so use this to find leads and check the case file.</div>}
         {cov && <div className="coverage">This view: <strong>{cov.coded_votes}</strong> coded votes · <strong>{cov.ranked_members}</strong> members ranked · {cov.landmark_votes} landmark votes checked against district opinion.</div>}
       </div>
 
@@ -94,9 +89,9 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
         <OverHome rows={overHome} onOpen={onOpen} kind="direct" />
         <OverHome rows={overHomeProxy} onOpen={onOpen} kind="proxy" />
         <Highlights title="Most often with their donors" blurb="Highest share of money-backed votes cast the industry’s way, weighted by how much it had given."
-          rows={loyal} onOpen={onOpen} />
+          rows={loyal} onOpen={onOpen} inferred={variant === 'inferred'} />
         <Highlights title="Took the money, voted the other way" blurb="Lowest share of money-backed votes cast the industry’s way. These members were funded by the industry and still went against it."
-          rows={resist} onOpen={onOpen} />
+          rows={resist} onOpen={onOpen} inferred={variant === 'inferred'} />
       </div>
 
       <div className="card">
@@ -160,7 +155,7 @@ function Findings({ method, board, onMethod }: { method: MethodData; board: Scor
   )
 }
 
-function Highlights({ title, blurb, rows, onOpen }: { title: string; blurb: string; rows: Scored[]; onOpen: (id: string) => void }) {
+function Highlights({ title, blurb, rows, onOpen, inferred }: { title: string; blurb: string; rows: Scored[]; onOpen: (id: string) => void; inferred: boolean }) {
   return (
     <div className="card">
       <h2>{title}</h2>
@@ -174,7 +169,7 @@ function Highlights({ title, blurb, rows, onOpen }: { title: string; blurb: stri
               <span className="who"><span className={`party ${m.party}`}><i />{m.party}</span> {m.name} <span className="hint">· {m.state}{m.chamber === 'Senate' ? ' Sen.' : ''}</span></span>
               <span className="val">{m.n_funded_aligned} of {m.n_funded}</span>
               <span className="dt">
-                Voted the industry’s way {m.n_funded_aligned} of {m.n_funded} times while it had given $10K or more
+                Voted {inferred ? 'the way its money pulls' : 'the industry’s way'} {m.n_funded_aligned} of {m.n_funded} times while it had given $10K or more
                 {m.money_at_stake ? `; ${fmtMoney(m.money_at_stake)} from ${m.top_sectors || 'these industries'}` : ''}.
               </span>
             </button>

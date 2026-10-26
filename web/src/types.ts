@@ -61,3 +61,6 @@ export type TopVote = {
   q: string | null; descr: string | null; title: string | null; bill: string | null; policy_area: string | null; result: string | null; yeas: number | null; nays: number | null; coded_side: 'Yea' | 'Nay' | null
 }
 export type TopVotes = { rows: TopVote[]; total: number }
+export type InferredLine = { label: string; votes_coded: number; weight: number; n_funded: number; n_funded_aligned: number; expected: number; lift: number; se: number | null; z: number | null; money: number }
+export type InferredVote = { d: string | null; congress: number; chamber: string; rollnumber: number; label: string; aligned: number; p_exp: number; pac_6y: number; pull_yea: number; t_only: number; bill: string | null; q: string | null; descr: string | null; result: string | null }
+export type MemberInferred = { summary: InferredLine[]; with_money: InferredVote[]; against_money: InferredVote[] }
