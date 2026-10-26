@@ -1,0 +1,8 @@
+locked 2026-10-26T18:29:21-04:00 (version 2)
+AFL-CIO positions restricted to votes whose title/description mention labor topics (unions, wages, pensions, NLRB, workplace safety, etc.); version 1 (all 315 matched key votes, incl. voting rights, policing, etc.) is kept as superseded_vote_direction_aflcio_unfiltered.csv and was seen producing scores before this filter was added because broad progressive priorities are not union-donor interests
+5fafd93570652d50f66ad7753f6497cdef3951a446d9e2a0d32d8cdc75805392  vote_direction_aflcio.csv
+
+--- version 1 lock ---
+locked 2026-10-26T18:06:15-04:00
+AFL-CIO key-vote positions (read from aflcio.org/scorecard/votes in the user's own browser) matched to roll calls by chamber, date, bill number and title; unmatched rows dropped; written before any alignment model used them
+fe936cf1ee9405f561dac37edfe27c97c4d78d6be30ca15e578032561a3288ef  vote_direction_aflcio.csv

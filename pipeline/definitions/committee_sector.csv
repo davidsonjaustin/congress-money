@@ -1,0 +1,35 @@
+chamber,committee_pattern,sector,tier,note
+House,^agriculture$,Agribusiness & Food,strict,
+House,^armed services$,Defense & Aerospace,strict,
+House,^financial services$,"Finance, Insurance & Real Estate",strict,
+House,^energy and commerce$,Energy & Natural Resources,strict,jurisdiction named in House rules: energy; health; telecom; commerce
+House,^energy and commerce$,Health,strict,
+House,^energy and commerce$,"Tech, Telecom & Media",strict,
+House,^natural resources$,Energy & Natural Resources,strict,
+House,^transportation and infrastructure$,Transportation,strict,
+House,^transportation and infrastructure$,Construction,strict,
+House,^education and (labor|the workforce)$,Education,strict,
+House,^education and (labor|the workforce)$,Labor,strict,
+House,^science,"Tech, Telecom & Media",broad,
+House,^science,Defense & Aerospace,broad,NASA
+House,^veterans,Health,broad,VA health system
+House,^ways and means$,Health,broad,Medicare/tax/trade jurisdiction
+House,^ways and means$,"Finance, Insurance & Real Estate",broad,
+House,^judiciary$,Lawyers & Lobbyists,broad,
+House,^judiciary$,"Tech, Telecom & Media",broad,antitrust/IP
+Senate,^agriculture,Agribusiness & Food,strict,
+Senate,^armed services$,Defense & Aerospace,strict,
+Senate,^banking,"Finance, Insurance & Real Estate",strict,
+Senate,^commerce,Transportation,strict,
+Senate,^commerce,"Tech, Telecom & Media",strict,
+Senate,^energy and natural resources$,Energy & Natural Resources,strict,
+Senate,^environment and public works$,Construction,strict,highways/infrastructure
+Senate,^environment and public works$,Energy & Natural Resources,broad,
+Senate,^health,Health,strict,
+Senate,^health,Education,strict,
+Senate,^health,Labor,strict,
+Senate,^finance$,Health,broad,Medicare/tax/trade jurisdiction
+Senate,^finance$,"Finance, Insurance & Real Estate",broad,
+Senate,^judiciary$,Lawyers & Lobbyists,broad,
+Senate,^judiciary$,"Tech, Telecom & Media",broad,antitrust/IP
+Senate,^veterans,Health,broad,

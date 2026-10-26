@@ -1,0 +1,3 @@
+locked 2026-10-26T16:21:57-04:00
+roll call -> survey item map written from bill identity only, before any district opinion was estimated or compared to any vote
+2177f2019e1deb7e55bae73deb2f786d4d55f455961d1b3d1eb48e0c02e82051  rollcall_issue_map.csv

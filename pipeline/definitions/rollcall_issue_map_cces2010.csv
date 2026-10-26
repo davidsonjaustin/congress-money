@@ -1,0 +1,17 @@
+congress,chamber,rollnumber,bill,date,item,yea_means,match,note
+111,House,45,HR1,2009-01-28,cces10_stimulus,support,direct,American Recovery and Reinvestment Act: House passage
+111,House,69,HR1,2009-02-13,cces10_stimulus,support,direct,Recovery Act conference report
+111,Senate,64,HR1,2009-02-13,cces10_stimulus,support,direct,Recovery Act conference report (60-38)
+111,House,15,HR2,2009-01-14,cces10_schip,support,direct,Children's Health Insurance Program Reauthorization: House passage
+111,Senate,31,HR2,2009-01-29,cces10_schip,support,direct,CHIP reauthorization: Senate passage (66-32)
+111,House,475,HR2454,2009-06-26,cces10_cleanenergy,support,direct,American Clean Energy and Security Act (cap and trade): House passage
+111,House,885,HR3962,2009-11-07,cces10_aca,support,direct,Affordable Health Care for America Act: House passage
+111,Senate,396,HR3590,2009-12-24,cces10_aca,support,direct,Patient Protection and Affordable Care Act: Senate passage (60-39)
+111,House,1150,HR3590,2010-03-21,cces10_aca,support,direct,ACA: House concurs in Senate amendments
+111,Senate,626,PN1768,2010-08-05,cces10_kagan,support,direct,Elena Kagan confirmation
+111,House,966,HR4173,2009-12-11,cces10_finreform,support,direct,Wall Street Reform and Consumer Protection Act: House passage
+111,Senate,559,HR4173,2010-05-20,cces10_finreform,support,direct,Financial reform: Senate passage (59-39)
+111,House,1398,HR4173,2010-06-30,cces10_finreform,support,direct,Dodd-Frank conference report: House
+111,Senate,605,HR4173,2010-07-15,cces10_finreform,support,direct,Dodd-Frank conference report: Senate (60-39)
+111,House,1621,HR2965,2010-12-15,cces10_dadt,support,direct,Don't Ask Don't Tell Repeal Act: House concurs
+111,Senate,678,HR2965,2010-12-18,cces10_dadt,support,direct,DADT repeal: Senate motion to concur (65-31)

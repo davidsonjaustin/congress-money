@@ -1,0 +1,5 @@
+locked 2026-10-26T16:05:07-04:00
+no money-vs-vote model had been run at lock time (baseline without money only)
+d6cbfb03e3bdfc9144cf6c2b572e139b1cf0896de6cdb0fb2d55eb893a2994c8  README_LOCKED.md
+1121998d02614e382d776c6f0b51f4ba2a08db39bca937114b37ebb6c47e8cf0  committee_sector.csv
+877cdf988899e71c1c01aaaa44ab9b5cfb4986b48efd4b3ef4f537bd17f84823  policy_sector.csv

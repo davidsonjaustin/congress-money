@@ -1,0 +1,10 @@
+item,sector,tier,note
+cces10_finreform,"Finance, Insurance & Real Estate",strict,Dodd-Frank financial regulation
+cces10_cleanenergy,Energy & Natural Resources,strict,cap and trade; also touches Manufacturing & Industrial (broad)
+cces10_cleanenergy,Manufacturing & Industrial,broad,
+cces10_aca,Health,strict,insurers hospitals pharma
+healthcare_aca,Health,strict,
+cces10_schip,Health,broad,
+enviro_carbon,Energy & Natural Resources,strict,EPA CO2 rules for power plants
+cces10_stimulus,Construction,broad,infrastructure spending
+cces10_stimulus,Transportation,broad,

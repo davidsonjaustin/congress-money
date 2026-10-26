@@ -1,0 +1,24 @@
+congress,chamber,rollnumber,bill,date,item,yea_means,match,note
+112,House,12,HR2,2011-01-19,healthcare_aca,support,direct,Repealing the Job-Killing Health Care Law Act: passage
+112,Senate,9,S223,2011-02-02,healthcare_aca,support,direct,amendment to repeal the ACA (47-51)
+113,House,153,HR45,2013-05-16,healthcare_aca,support,direct,Obamacare Repeal Act: passage
+113,Senate,97,S649,2013-04-17,guns_bgchecks,support,direct,Manchin-Toomey background-check amendment (54-46; 60 needed)
+113,Senate,101,S649,2013-04-17,guns_assaultban,support,direct,Feinstein assault-weapons amendment (40-60)
+113,Senate,168,S744,2013-06-27,immig_legalize,support,related,comprehensive immigration reform with a path to legal status: passage
+113,House,745,HR3826,2014-03-06,enviro_carbon,oppose,direct,Electricity Security and Affordability Act bars EPA CO2 standards for power plants: Yea = oppose EPA regulating CO2
+113,House,250,HR1797,2013-06-18,abortion_20weeks,support,related,DC-only 20-week abortion ban: passage
+114,House,222,HR36,2015-05-13,abortion_20weeks,support,direct,Pain-Capable Unborn Child Protection Act: passage
+114,Senate,268,HR36,2015-09-22,abortion_20weeks,support,direct,cloture on the motion to proceed (54-42; 60 needed)
+114,House,566,HR3762,2015-10-23,healthcare_aca,support,direct,Restoring Americans' Healthcare Freedom Reconciliation Act: passage
+114,Senate,329,HR3762,2015-12-03,healthcare_aca,support,direct,reconciliation ACA repeal: passage (52-47)
+114,Senate,306,SJRES24,2015-11-17,enviro_carbon,oppose,direct,disapproval of EPA CO2 rule for existing power plants: Yea = oppose EPA regulating CO2
+114,Senate,307,SJRES23,2015-11-17,enviro_carbon,oppose,direct,disapproval of EPA CO2 rule for new power plants: Yea = oppose EPA regulating CO2
+115,House,255,HR1628,2017-05-04,healthcare_aca,support,direct,American Health Care Act: passage
+115,Senate,179,HR1628,2017-07-28,healthcare_aca,support,direct,Health Care Freedom Act (skinny repeal) (49-51)
+115,House,548,HR36,2017-10-03,abortion_20weeks,support,direct,Pain-Capable Unborn Child Protection Act: passage
+115,Senate,350,S2311,2018-01-29,abortion_20weeks,support,direct,cloture on the motion to proceed (51-46; 60 needed)
+116,House,98,HR8,2019-02-27,guns_bgchecks,support,direct,Bipartisan Background Checks Act: passage
+116,House,102,HR1112,2019-02-28,guns_bgchecks,support,related,Enhanced Background Checks Act: passage
+116,House,239,HR6,2019-06-04,immig_legalize,support,related,American Dream and Promise Act: passage
+117,House,74,HR8,2021-03-11,guns_bgchecks,support,direct,Bipartisan Background Checks Act: passage
+117,House,857,HR1808,2022-07-29,guns_assaultban,support,direct,Assault Weapons Ban: passage

@@ -1,0 +1,42 @@
+policy_area,sector,tier,note
+Agriculture and Food,Agribusiness & Food,strict,bill's own subject is the sector's core business
+Energy,Energy & Natural Resources,strict,
+Public Lands and Natural Resources,Energy & Natural Resources,strict,drilling/mining/grazing/timber access
+Finance and Financial Sector,"Finance, Insurance & Real Estate",strict,
+Health,Health,strict,
+Armed Forces and National Security,Defense & Aerospace,strict,procurement and authorization bills; many votes here are not industry-relevant (personnel policy) -> expect noise
+Transportation and Public Works,Transportation,strict,
+"Science, Technology, Communications","Tech, Telecom & Media",strict,
+Labor and Employment,Labor,strict,Labor treated as an interest group; pro-labor direction determined separately
+Education,Education,strict,
+Housing and Community Development,"Finance, Insurance & Real Estate",broad,mortgages/real estate; also HUD social programs
+Taxation,Manufacturing & Industrial,broad,tax bills touch every business sector -- applied to all business sectors below
+Taxation,"Finance, Insurance & Real Estate",broad,
+Taxation,Energy & Natural Resources,broad,
+Taxation,Health,broad,
+Taxation,"Tech, Telecom & Media",broad,
+Taxation,Retail & Consumer,broad,
+Taxation,Construction,broad,
+Taxation,Transportation,broad,
+Taxation,Agribusiness & Food,broad,
+Taxation,Defense & Aerospace,broad,
+Environmental Protection,Energy & Natural Resources,broad,
+Environmental Protection,Manufacturing & Industrial,broad,
+Environmental Protection,Agribusiness & Food,broad,
+Environmental Protection,Construction,broad,
+Foreign Trade and International Finance,Manufacturing & Industrial,broad,
+Foreign Trade and International Finance,Agribusiness & Food,broad,
+Foreign Trade and International Finance,"Finance, Insurance & Real Estate",broad,
+Foreign Trade and International Finance,"Tech, Telecom & Media",broad,
+Foreign Trade and International Finance,Retail & Consumer,broad,
+Commerce,Retail & Consumer,broad,consumer protection / business regulation
+Commerce,"Finance, Insurance & Real Estate",broad,
+Commerce,"Tech, Telecom & Media",broad,
+Water Resources Development,Construction,broad,
+Water Resources Development,Agribusiness & Food,broad,
+Law,Lawyers & Lobbyists,broad,tort/litigation procedure
+Immigration,Agribusiness & Food,broad,farm labor
+Immigration,Construction,broad,
+Immigration,"Tech, Telecom & Media",broad,skilled-worker visas
+Immigration,"Travel, Lodging & Leisure",broad,
+Animals,Agribusiness & Food,broad,

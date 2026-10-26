@@ -1,0 +1,3 @@
+locked 2026-10-26T18:29:01-04:00
+LCV pro-environment positions (read from each lcv.org roll-call-vote page in the user's own browser) turned into the fossil-fuel side (opposite) for oil_gas and coal_mining, only for Dirty Energy votes or Climate/Clean Air votes whose titles name fossil-fuel topics; set before any alignment model used them
+40bde091bad5ec668923777c451fe4b42c7cb6b912c38d91ecf50d8c0ed9684a  vote_direction_lcv.csv

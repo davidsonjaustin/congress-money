@@ -1,0 +1,3 @@
+locked 2026-10-26T16:26:09-04:00
+survey item -> donor sector tie, written before any money-vs-vote model; items not listed (guns, abortion, immigration, DADT, Kagan) have no sector tie
+adacd9c700bb74d732c501af1a6ea6983b6a4aae693b696b78c07c6faeaaf81a  item_sector.csv

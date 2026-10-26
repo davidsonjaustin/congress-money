@@ -1,0 +1,3 @@
+locked 2026-10-26T17:22:46-04:00
+which way each vote helps each donor sector, from cited trade-group positions, set before any member's money was compared to any member's vote
+58aa4c67f64340dff9ff0dc0ccdbc3e8820dde7341e4dca5c08bd43af58fb6bf  vote_direction.csv

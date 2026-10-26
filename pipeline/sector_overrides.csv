@@ -1,0 +1,132 @@
+cmte_id,sector,confidence,note
+C00024521,Lawyers & Lobbyists,web-verified,AAJ PAC; funded by trial attorneys (InfluenceWatch/FEC)
+C00097568,Defense & Aerospace,web-verified,RTX; ~54% of revenue is defense
+C00211318,"Finance, Insurance & Real Estate",judgment,Deloitte; accounting firm
+C00107235,"Finance, Insurance & Real Estate",judgment,PwC; accounting firm
+C00280222,"Finance, Insurance & Real Estate",judgment,KPMG; accounting firm
+C00010868,Construction,judgment,engineering firms trade association
+C00012245,"Finance, Insurance & Real Estate",judgment,UBS; bank
+C00012880,Health,judgment,physical therapists
+C00089458,Construction,judgment,stone/sand/gravel aggregates
+C00053553,Ideological / Single-Issue,judgment,gun rights (NRA)
+C00148031,Manufacturing & Industrial,ambiguous,construction/mining equipment maker
+C00384701,Caucus & Party-Aligned PACs,judgment,
+C00101105,General Business Associations,judgment,NFIB small-business lobby
+C00409730,Caucus & Party-Aligned PACs,judgment,
+C00477653,"Tech, Telecom & Media",ambiguous,Cox: media/communications/automotive
+C00358663,"Travel, Lodging & Leisure",ambiguous,resort/timeshare developers
+C00001198,"Travel, Lodging & Leisure",judgment,hotel & lodging association
+C00147066,"Finance, Insurance & Real Estate",judgment,life insurers
+C00091561,Labor,ambiguous,federal employees/retirees association
+C00040279,Health,judgment,Abbott
+C00034488,Agribusiness & Food,judgment,Anheuser-Busch
+C00797670,Ideological / Single-Issue,judgment,pro-Israel (AIPAC)
+C00204099,Manufacturing & Industrial,ambiguous,Deere; agricultural machinery
+C00235853,Ideological / Single-Issue,judgment,Human Rights Campaign
+C00076299,"Finance, Insurance & Real Estate",judgment,CME Group
+C00084491,General Business Associations,judgment,franchise association
+C00108035,Health,judgment,McKesson
+C00252940,Ideological / Single-Issue,judgment,League of Conservation Voters
+C00441949,Ideological / Single-Issue,judgment,J Street
+C00141218,Energy & Natural Resources,judgment,Exelon
+C00380550,"Finance, Insurance & Real Estate",judgment,Fidelity
+C00375360,Health,judgment,American College of Cardiology
+C00447565,"Finance, Insurance & Real Estate",judgment,Finseca; financial advisers
+C00448373,Caucus & Party-Aligned PACs,judgment,
+C00340943,Health,judgment,DaVita
+C00314617,Ideological / Single-Issue,judgment,Planned Parenthood
+C00573261,Ideological / Single-Issue,judgment,End Citizens United
+C00040535,"Finance, Insurance & Real Estate",judgment,American Express
+C00165159,Caucus & Party-Aligned PACs,judgment,
+C00379768,"Finance, Insurance & Real Estate",ambiguous,Experian; credit bureau/data
+C00388827,"Finance, Insurance & Real Estate",judgment,Rocket; mortgage lender
+C00215285,Defense & Aerospace,judgment,General Atomics
+C00279455,Health,judgment,AstraZeneca
+C00012914,"Finance, Insurance & Real Estate",judgment,title insurance association
+C00219642,Transportation,judgment,Enterprise; car rental
+C00113803,Health,judgment,osteopathic physicians
+C00346353,Construction,judgment,CRH; building materials
+C00199703,Health,judgment,GSK
+C00279216,"Tech, Telecom & Media",judgment,iHeartMedia
+C00400929,Health,judgment,Cencora; drug distribution
+C00034132,Construction,judgment,Fluor; engineering & construction
+C00040394,Energy & Natural Resources,judgment,Williams; pipelines
+C00274944,Health,judgment,College of American Pathologists
+C00340075,Energy & Natural Resources,judgment,BASF; chemicals
+C00063164,Agribusiness & Food,judgment,McDonald's
+C00079541,Ideological / Single-Issue,judgment,
+C00339655,Health,judgment,US Oncology
+C00363879,Energy & Natural Resources,judgment,Entergy
+C00103549,Defense & Aerospace,ambiguous,Parsons; engineering and defense/intelligence services
+C00364158,Health,judgment,ACOG
+C00433060,Caucus & Party-Aligned PACs,judgment,
+C00007948,Energy & Natural Resources,judgment,Weyerhaeuser; forestry
+C00252338,Energy & Natural Resources,judgment,American Chemistry Council
+C00293910,Health,judgment,orthodontists
+C00042002,Agribusiness & Food,judgment,Reynolds American; tobacco
+C00122101,Ideological / Single-Issue,judgment,Safari Club; hunting
+C00300418,Defense & Aerospace,ambiguous,SAIC; government IT services
+C00002261,Health,judgment,Federation of American Hospitals
+C00177469,Energy & Natural Resources,judgment,PG&E
+C00552851,Caucus & Party-Aligned PACs,judgment,
+C00251751,Retail & Consumer,judgment,Lowe's
+C00144774,Energy & Natural Resources,judgment,Southern Company
+C00295527,Ideological / Single-Issue,judgment,Citizens United
+C00035691,Energy & Natural Resources,judgment,Halliburton
+C00305318,Caucus & Party-Aligned PACs,judgment,Blue Dog
+C00196725,"Tech, Telecom & Media",judgment,HPE
+C00349746,Agribusiness & Food,judgment,California Dairies
+C00199257,Health,judgment,Genentech
+C00092957,Labor,judgment,postal supervisors
+C00513549,Energy & Natural Resources,judgment,Phillips 66
+C00019653,Energy & Natural Resources,judgment,Edison International
+C00253153,Agribusiness & Food,judgment,Bloomin' Brands; restaurants
+C00480863,Ideological / Single-Issue,ambiguous,firearms industry trade association
+C00257329,Retail & Consumer,judgment,P&G; consumer goods
+C00341396,Ideological / Single-Issue,judgment,MoveOn
+C00236414,"Finance, Insurance & Real Estate",judgment,Transamerica
+C00193433,Ideological / Single-Issue,judgment,EMILY's List
+C00379628,Manufacturing & Industrial,judgment,Nucor; steel
+C00103697,Construction,judgment,Bechtel
+C00435933,Health,judgment,American Academy of Neurology
+C00376376,"Finance, Insurance & Real Estate",judgment,Travelers
+C00100404,Labor,judgment,postmasters association
+C00082040,General Business Associations,judgment,US Chamber of Commerce
+C00365536,Caucus & Party-Aligned PACs,judgment,CHC BOLD PAC
+C00140855,Energy & Natural Resources,judgment,FirstEnergy
+C00390583,Lawyers & Lobbyists,judgment,Brownstein Hyatt Farber Schreck
+C00033969,Health,judgment,Novartis
+C00345132,Ideological / Single-Issue,judgment,Republican Jewish Coalition
+C00430256,Health,judgment,Molina; health insurer
+C00035675,Health,judgment,Bristol-Myers Squibb
+C00410266,"Finance, Insurance & Real Estate",judgment,Vanguard
+C00387720,Ideological / Single-Issue,judgment,
+C00570226,Caucus & Party-Aligned PACs,judgment,
+C00075341,"Tech, Telecom & Media",judgment,Motorola Solutions
+C00685297,Ideological / Single-Issue,judgment,
+C00275123,Defense & Aerospace,judgment,Leonardo DRS
+C00400705,Retail & Consumer,judgment,Publix
+C00327189,Caucus & Party-Aligned PACs,judgment,
+C00365072,Health,judgment,Express Scripts
+C00424838,Health,judgment,Novo Nordisk
+C00181826,Health,judgment,Aetna; health insurer
+C00089086,Health,judgment,occupational therapists
+C00147512,Caucus & Party-Aligned PACs,judgment,Congressional Black Caucus PAC
+C00100693,"Finance, Insurance & Real Estate",judgment,CBOE
+C00311878,Health,judgment,Medtronic
+C00357863,Health,judgment,Boston Scientific
+C00144345,Health,judgment,Sanofi
+C00363770,Caucus & Party-Aligned PACs,judgment,
+C00034272,Agribusiness & Food,judgment,National Chicken Council
+C00639229,Caucus & Party-Aligned PACs,judgment,
+C00312777,Lawyers & Lobbyists,judgment,Cozen O'Connor
+C00550970,Ideological / Single-Issue,judgment,
+C00466813,Ideological / Single-Issue,judgment,
+C00113753,Manufacturing & Industrial,judgment,Johnson Controls
+C00325332,Health,ambiguous,senior living operators
+C00193631,"Finance, Insurance & Real Estate",web-verified,Farm Credit Council; trade assoc of borrower-owned cooperative lenders (lobbies as a lender)
+C00096156,Manufacturing & Industrial,web-verified,Honeywell; diversified - aerospace is largest segment at ~33-38% of revenue
+C00236489,Energy & Natural Resources,web-verified,Koch; diversified (refining/chemicals/forest products/fertilizer; also electronics & auto parts)
+C00024869,Defense & Aerospace,ambiguous,GE aerospace employee PAC
+C00334581,Manufacturing & Industrial,web-verified,Komatsu Mining (ex-Joy Global); makes mining equipment - not a resource company
+C00014555,Retail & Consumer,web-verified,FMI Food Industry Association; trade group of food retailers/wholesalers (~40k stores)
