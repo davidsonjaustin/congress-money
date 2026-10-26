@@ -38,3 +38,22 @@ export const ITEM_LABEL: Record<string, string> = {
 }
 
 export const fmtLift = (l: number | null | undefined): string => (l == null ? '–' : `${l >= 0 ? '+' : '−'}${Math.abs(l * 100).toFixed(0)} pts`)
+
+export type Tier = { key: 'far_more' | 'more' | 'same' | 'less' | 'far_less' | 'unclear'; label: string; short: string; color: string }
+/** Plain-language tier from the member's lift over same-party peers and how sure we are (z). */
+export function tierOf(m: { lift: number | null; z: number | null }): Tier | null {
+  if (m.lift == null || m.z == null) return null
+  const l = m.lift * 100
+  if (m.z >= 3 && l >= 20) return { key: 'far_more', label: 'Far more donor-loyal than party peers', short: 'Far more loyal', color: 'var(--s2)' }
+  if (m.z >= 2 && l >= 8) return { key: 'more', label: 'More donor-loyal than party peers', short: 'More loyal', color: 'var(--s2)' }
+  if (m.z <= -3 && l <= -20) return { key: 'far_less', label: 'Far less donor-loyal than party peers', short: 'Far less loyal', color: 'var(--s3)' }
+  if (m.z <= -2 && l <= -8) return { key: 'less', label: 'Less donor-loyal than party peers', short: 'Less loyal', color: 'var(--s3)' }
+  if (Math.abs(m.z) < 2) return { key: 'unclear', label: 'No clear difference from party peers', short: 'No clear difference', color: 'var(--muted)' }
+  return { key: 'same', label: 'About the same as party peers', short: 'About the same', color: 'var(--muted)' }
+}
+/** "+37 pts (+22 to +52)": the gap with a 90% range. */
+export function liftRange(lift: number | null, se: number | null): string {
+  if (lift == null) return '–'
+  const f = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(0)}`
+  return se == null ? `${f(lift)} pts` : `${f(lift)} pts (${f(lift - 1.64 * se)} to ${f(lift + 1.64 * se)})`
+}

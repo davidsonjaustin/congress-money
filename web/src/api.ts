@@ -1,4 +1,4 @@
-import type { Constituent, Definitions, DonorVote, Scoreboard, SectorLine, TimingRow, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
+import type { Constituent, Definitions, DonorVote, MethodData, Scoreboard, SectorLine, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
 
 const cache = new Map<string, Promise<unknown>>()
 function get<T>(url: string): Promise<T> {
@@ -21,7 +21,7 @@ export const api = {
   money: (id: string) => get<MoneyRow[]>(`/api/member/${id}/money`),
   votes: (id: string) => get<Vote[]>(`/api/member/${id}/votes`),
   scoreboard: (variant = 'all', sector = 'All business') => get<Scoreboard>(`/api/scoreboard?variant=${variant}&sector=${encodeURIComponent(sector)}`),
-  method: () => get<{ timing: TimingRow[] }>('/api/method'),
+  method: () => get<MethodData>('/api/method'),
   sectors: (id: string) => get<SectorLine[]>(`/api/member/${id}/sectors`),
   donorVotes: (id: string) => get<DonorVote[]>(`/api/member/${id}/donor_votes`),
   constituents: (id: string) => get<Constituent[]>(`/api/member/${id}/constituents`),

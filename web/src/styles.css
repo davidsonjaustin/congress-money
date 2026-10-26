@@ -174,3 +174,19 @@ ol.hl .dt { grid-area: dt; color: var(--ink-2); font-size: 12px; }
 .hrow .track i { display: block; height: 10px; background: var(--s1); border-radius: 0 4px 4px 0; min-width: 2px; }
 .hrow .amt { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 @media (max-width: 760px) { .verdict { grid-template-columns: 1fr; } .hrow { grid-template-columns: 120px 1fr 70px; } }
+
+/* ---- simplified scoreboard ---- */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 8px 0 4px; max-width: 1100px; }
+.fcard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+.fcard .fh { font-weight: 600; margin-bottom: 4px; }
+.fcard p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.flink { grid-column: 1 / -1; }
+.chip { display: inline-block; border: 1.5px solid var(--muted); border-radius: 999px; padding: 0 8px; font-size: 11.5px; color: var(--ink); line-height: 18px; }
+details.adv { width: 100%; margin-top: 2px; }
+details.adv summary { cursor: pointer; color: var(--ink-2); font-size: 12.5px; }
+.advrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 8px; }
+.filterbar .coverage { width: 100%; margin: 0; }
+.vtier { display: inline-block; border: 2px solid var(--muted); border-radius: 12px; padding: 6px 12px; font-size: 18px; font-weight: 600; line-height: 1.2; }
+.vrange { color: var(--ink-2); margin-top: 6px; font-size: 13px; }
+.story { margin-bottom: 10px; }
+.story p { margin: 0 0 6px; font-size: 14.5px; }

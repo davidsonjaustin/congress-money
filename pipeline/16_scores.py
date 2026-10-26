@@ -36,14 +36,14 @@ def expected_alignment(df: pd.DataFrame) -> pd.Series:
     The ideology/district slopes are estimated separately for each sector group: being conservative raises the chance of voting
     with banks and oil but lowers it for labor, so one shared slope would be wrong for both.
     """
-    d = df[["rc", "sector", "subsector", "party", "aligned", "nominate_dim1", "own_share"]].copy()
+    d = df[["rc", "sector", "subsector", "party", "aligned", "nominate_dim1", "own_share", "local_z"]].copy()
     d["fe"] = d["rc"].astype(str) + "|" + d["sector"] + "|" + d["subsector"] + "|" + d["party"]
     g = d.groupby("fe")
     n = g["aligned"].transform("size")
     loo = (g["aligned"].transform("sum") - d["aligned"]) / (n - 1).clip(lower=1)
-    X = d[["nominate_dim1", "own_share"]]
+    X = d[["nominate_dim1", "own_share", "local_z"]]
     ok = X.notna().all(axis=1)
-    Xd = X - g[["nominate_dim1", "own_share"]].transform("mean")
+    Xd = X - g[["nominate_dim1", "own_share", "local_z"]].transform("mean")
     yd = d["aligned"] - g["aligned"].transform("mean")
     adj = pd.Series(0.0, index=d.index)
     for _, idx in d.groupby(["sector", "subsector"]).groups.items():
@@ -94,12 +94,13 @@ def build_scores() -> pd.DataFrame:
             cov.append({"variant": variant, "sector_label": lab, "votes": g["rc"].nunique(), "members_ranked": int((s["weight"] >= MIN_WEIGHT).sum())})
         if variant == "all":
             con.execute("CREATE OR REPLACE TABLE donor_alignment_scored AS SELECT * FROM df")
-    scores = pd.concat(frames, ignore_index=True)
-    scores["ranked"] = scores["weight"] >= MIN_WEIGHT
-    con.execute("CREATE OR REPLACE TABLE scores AS SELECT * FROM scores")
+    scores_df = pd.concat(frames, ignore_index=True)
+    scores_df["ranked"] = scores_df["weight"] >= MIN_WEIGHT
+    # NB: the DataFrame must not share its name with the table, or DuckDB reads the old table instead of the DataFrame
+    con.execute("CREATE OR REPLACE TABLE scores AS SELECT * FROM scores_df")
     cov_df = pd.DataFrame(cov)
     con.execute("CREATE OR REPLACE TABLE coverage_stats AS SELECT * FROM cov_df")
-    return scores
+    return scores_df
 
 
 def build_info() -> pd.DataFrame:
@@ -110,12 +111,23 @@ def build_info() -> pd.DataFrame:
     cs = vv.groupby("bioguide").agg(const_votes=("against", "size"), const_against=("against", "sum"), const_peer=("peer_against", "sum")).reset_index()
     cs["const_rate"] = cs["const_against"] / cs["const_votes"]
     cs["const_lift"] = (cs["const_against"] - cs["const_peer"]) / cs["const_votes"]
+    # donors vs district over every coded vote that has a clear district view. 'direct' = a survey item about that very issue;
+    # 'proxy' = the fossil votes, with district opinion stood in by support for letting the EPA regulate CO2. Kept apart: the proxy is one opinion item
+    # applied to ~150 different fossil votes, so it must never be pooled with the direct matches.
     dd = con.execute("""
-        SELECT a.bioguide, sum((a.aligned = 1 AND v.with_district = 0)::INT) AS donors_over_district,
-               sum((a.aligned = 0 AND v.with_district = 1)::INT) AS district_over_donors
-        FROM donor_alignment a JOIN vote_vs_district v ON v.congress = a.congress AND v.chamber = a.chamber AND v.rollnumber = a.rollnumber
-             AND v.bioguide = a.bioguide AND v.match = 'direct' AND v.with_district IS NOT NULL
+        SELECT a.bioguide,
+               sum((v.match = 'direct' AND a.aligned = 1 AND v.with_district = 0)::INT) AS donors_over_district,
+               sum((v.match = 'direct' AND a.aligned = 0 AND v.with_district = 1)::INT) AS district_over_donors,
+               sum((v.match = 'direct')::INT) AS donor_district_votes,
+               sum((v.match = 'proxy' AND a.aligned = 1 AND v.with_district = 0)::INT) AS proxy_donors_over,
+               sum((v.match = 'proxy' AND a.aligned = 0 AND v.with_district = 1)::INT) AS proxy_district_over,
+               sum((v.match = 'proxy')::INT) AS proxy_votes
+        FROM (SELECT DISTINCT bioguide, congress, chamber, rollnumber, aligned FROM donor_alignment WHERE sector <> 'Labor') a
+        JOIN vote_vs_district v ON v.congress = a.congress AND v.chamber = a.chamber AND v.rollnumber = a.rollnumber
+             AND v.bioguide = a.bioguide AND v.with_district IS NOT NULL AND v.match IN ('direct', 'proxy')
         GROUP BY 1""").df()
+    fo = con.execute("""SELECT bioguide, count(*) AS fossil_const_votes, sum((1 - with_district)::INT) AS fossil_const_against
+                        FROM vote_vs_district WHERE match = 'proxy' AND with_district IS NOT NULL GROUP BY 1""").df()
     names = con.execute("""
         WITH t AS (SELECT bioguide_id, arg_max(bioname, congress) bn, arg_max(party_code, congress) pc, arg_max(state, congress) st,
                           arg_max(chamber, congress) ch, max(congress) last_c, min(congress) first_c FROM c.member_terms
@@ -123,7 +135,7 @@ def build_info() -> pd.DataFrame:
              x AS (SELECT bioguide, any_value(full_name) fn FROM c.id_crosswalk GROUP BY 1)
         SELECT t.bioguide_id AS bioguide, coalesce(x.fn, t.bn) AS name, CASE t.pc WHEN 100 THEN 'D' WHEN 200 THEN 'R' ELSE 'I' END AS party,
                t.st AS state, t.ch AS chamber, t.last_c, t.first_c FROM t LEFT JOIN x ON x.bioguide = t.bioguide_id""").df()
-    info = names.merge(cs, on="bioguide", how="left").merge(dd, on="bioguide", how="left")
+    info = names.merge(cs, on="bioguide", how="left").merge(dd, on="bioguide", how="left").merge(fo, on="bioguide", how="left")
     con.execute("CREATE OR REPLACE TABLE member_info AS SELECT * FROM info")
     return info
 
@@ -137,8 +149,10 @@ def build_sector_lines() -> None:
     def agg_s(g: pd.DataFrame) -> pd.Series:
         sw = g["w"].sum()
         funded = g[g["pac_6y"] >= 10_000]
+        lift = (g["w"] * g["resid"]).sum() / (sw + SHRINK)
+        se = np.sqrt((g["w"] ** 2 * g["p_exp"] * (1 - g["p_exp"])).sum()) / (sw + SHRINK)
         return pd.Series({"votes": len(g), "weight": sw, "money": float(g["pac_6y"].max()), "n_funded": len(funded), "n_aligned": int(funded["aligned"].sum()),
-                          "peers_aligned": float(funded["p_exp"].sum()), "lift": (g["w"] * g["resid"]).sum() / (sw + SHRINK)})
+                          "peers_aligned": float(funded["p_exp"].sum()), "lift": lift, "se": se, "z": lift / se if se > 0 else np.nan})
     ss = df.groupby(["bioguide", "sector", "subsector", "label"]).apply(agg_s, include_groups=False).reset_index()
     con.execute("CREATE OR REPLACE TABLE member_sector_scores AS SELECT * FROM ss")
 
@@ -174,7 +188,7 @@ def timing() -> pd.DataFrame:
         ("Money before the vote only", ["lg_recent"], ["fe"]),
         ("Money after the vote only", ["lg_after"], ["fe"]),
         ("Both together", ["lg_recent", "lg_after"], ["fe"]),
-        ("Both, plus ideology, district lean and overall fundraising", ["lg_recent", "lg_after", "nominate_dim1", "own_share", "lg_other"], ["fe"]),
+        ("Both, plus ideology, district lean and overall fundraising", ["lg_recent", "lg_after", "nominate_dim1", "own_share", "local_z", "lg_other"], ["fe"]),
         ("Both, same member compared with themselves over time", ["lg_recent", "lg_after"], ["fe", "bioguide"]),
     ]
     groups = [("All coded votes", df), ("Banks", df[df["subsector"] == "banks"]), ("Oil and gas", df[df["subsector"] == "oil_gas"]), ("Labor (unions)", df[df["sector"] == "Labor"])]

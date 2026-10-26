@@ -111,6 +111,24 @@ def respondents(df: pd.DataFrame, item: str, c: int) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
 
 
+def respondents_for(df: pd.DataFrame, item: str, c: int, chamber: str, proxy: bool) -> tuple[pd.DataFrame, int]:
+    """Respondents for (item, Congress). A proxy item with no survey in its own years borrows the nearest Congress that has one: for the
+    Senate (state-level opinion) in either direction; for the House only from Congresses on the same district map (113th onward)."""
+    r = respondents(df, item, c)
+    if not r.empty or not proxy:
+        return r, c
+    for step in range(1, 12):
+        for cand in (c - step, c + step):
+            if chamber == "House" and (cand < 113 or c < 113 or cand > 119):
+                continue
+            if cand < 109 or cand > 119:
+                continue
+            r = respondents(df, item, cand)
+            if not r.empty:
+                return r, cand
+    return r, c
+
+
 def estimate(resp: pd.DataFrame, chamber: str, lean: pd.DataFrame) -> pd.DataFrame:
     keys = ["st"] if chamber == "Senate" else ["st", "district"]
     g = resp.assign(ws=resp["w"] * resp["sup"], w2=resp["w"] ** 2).groupby(keys).agg(
@@ -148,7 +166,8 @@ def estimate(resp: pd.DataFrame, chamber: str, lean: pd.DataFrame) -> pd.DataFra
 
 def main() -> None:
     d = ROOT / "pipeline" / "definitions"
-    mp = pd.concat([pd.read_csv(d / "rollcall_issue_map.csv"), pd.read_csv(d / "rollcall_issue_map_cces2010.csv")], ignore_index=True)
+    mp = pd.concat([pd.read_csv(f) for f in sorted(d.glob("rollcall_issue_map*.csv"))], ignore_index=True)
+    mp = mp.drop_duplicates(["congress", "chamber", "rollnumber"])
     items = sorted(mp["item"].unique())
     df = load_survey(items)
     con = duckdb.connect(str(ROOT / "data" / "analysis.duckdb"))
@@ -157,13 +176,14 @@ def main() -> None:
 
     rows, diag = [], []
     for (c, ch, item), _ in mp.groupby(["congress", "chamber", "item"]):
-        resp = respondents(df, item, int(c))
+        is_proxy = bool((mp[(mp["congress"] == c) & (mp["chamber"] == ch) & (mp["item"] == item)]["match"] == "proxy").all())
+        resp, used = respondents_for(df, item, int(c), ch, is_proxy)
         if resp.empty:
             print(f"!! no respondents for {item} in the {c}th"); continue
         lean = lean_all[(lean_all["congress"] == c) & (lean_all["chamber"] == ch)][["state", "district", "demshare_pres", "mrp_ideology"]]
         est = estimate(resp, ch, lean)
         est.insert(0, "item", item); est.insert(0, "chamber", ch); est.insert(0, "congress", int(c))
-        est["years"] = ",".join(str(y) for y in sorted(resp["year"].unique()))
+        est["years"] = ",".join(str(y) for y in sorted(resp["year"].unique())) + (f" (proxy: {used}th)" if used != int(c) else "")
         rows.append(est)
         ok = est["raw"].notna()
         diag.append((int(c), ch, item, est["years"].iloc[0], int(ok.sum()), float(est.loc[ok, "n_resp"].median()),
@@ -205,7 +225,7 @@ def main() -> None:
             return f"{100 * (1 - s['with_district'].mean()):4.0f}% of {len(s):<3d}" if len(s) else "     –"
         rep.append((c, ch, rn, g["bill"].iloc[0], g["item"].iloc[0], g["match"].iloc[0], len(g), len(conf), against("D"), against("R")))
     for c, ch, rn, bill, item, match, n, nc, aD, aR in rep:
-        print(f"{c:>4} {ch[:3]:3s} {rn:>4} {bill:8s} {item:19s} {match:7s} {n:>7} {nc:>10} {aD:>14s} {aR:>14s}")
+        print(f"{c:>4} {ch[:3]:3s} {rn:>4} {str(bill):8s} {item:19s} {match:7s} {n:>7} {nc:>10} {aD:>14s} {aR:>14s}")
 
 
 if __name__ == "__main__":

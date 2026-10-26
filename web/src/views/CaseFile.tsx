@@ -3,7 +3,7 @@ import * as d3 from 'd3'
 import { api } from '../api'
 import type { Constituent, Definitions, DonorVote, Profile, Scored, SectorLine } from '../types'
 import { useWidth } from '../hooks'
-import { fmtLift, fmtMoney, ordinal } from '../util'
+import { fmtLift, fmtMoney, liftRange, ordinal } from '../util'
 import { ConstituentsCard, DonorVotesCard } from './MemberView'
 
 type Props = { id: string; defs: Definitions; onExplore: (id: string) => void }
@@ -56,6 +56,7 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
   const selLine = sectors.find((s) => `${s.sector}|${s.subsector}` === sel)
   const selVotes = votes.filter((v) => `${v.sector}|${v.subsector}` === sel)
   const donorMax = donors[0]?.[1] ?? 1
+  const story = buildStory({ name: profile.name, me, sectors, votes })
 
   return (
     <div className="page">
@@ -74,21 +75,26 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
 
       <div className="card verdict">
         <div className="vleft">
-          <div className="vnum" aria-label="donor-loyalty index">{isRanked ? me!.index!.toFixed(0) : '–'}</div>
-          <div className="vlbl">{isRanked ? 'donor-loyalty index' : 'not ranked yet'}</div>
-          {isRanked && <div className="scale" aria-hidden><i style={{ left: `${me!.index}%` }} /><span style={{ left: '50%' }} /></div>}
-          {isRanked && <div className="hint">business donors · 50 = votes like same-party peers</div>}
+          {isRanked ? (
+            <>
+              <div className="vtier" style={{ borderColor: 'var(--s2)' }}>{me!.n_funded_aligned} of {me!.n_funded}</div>
+              <div className="vlbl">money-backed votes cast the industry’s way</div>
+              <div className="vrange">{fmtMoney(me!.money_at_stake ?? 0)} from {me!.top_sectors || 'these industries'}</div>
+            </>
+          ) : (
+            <div className="vtier" style={{ borderColor: 'var(--muted)' }}>Not ranked yet</div>
+          )}
         </div>
         <div className="vright">
+          {story.length > 0 && <div className="story">{story.map((p, i) => <p key={i}>{p}</p>)}</div>}
           {isRanked ? (
             <>
               <p className="lead">
-                On votes where a funding sector clearly won or lost, {profile.name.split(' ')[0]} was <strong>{verdictWord(me!.index!)}</strong> same-party colleagues
-                {pctile != null ? ` (higher than ${pctile}% of ranked members)` : ''}.
+                On votes where a business sector clearly won or lost and had given {profile.name.split(' ')[0]} $10K or more in the prior six years, they voted its way{' '}
+                <strong>{me!.n_funded_aligned} of {me!.n_funded}</strong> times.
               </p>
               <ul className="facts">
-                <li>Voted the donors’ way on <strong>{me!.n_funded_aligned} of {me!.n_funded}</strong> votes where that sector had given $10K or more in the prior six years; same-party peers would be expected to on about <strong>{(me!.peers_funded_aligned ?? 0).toFixed(1)}</strong>.</li>
-                <li>Gap beyond peers: <strong>{fmtLift(me!.lift)}</strong>{Math.abs(me!.z ?? 0) < 1.5 ? ' (small enough that chance could explain it)' : ''}.</li>
+                <li>Check, is it just their politics? Same-party colleagues with the same ideology and district would be expected to vote the industries’ way on about <strong>{(me!.peers_funded_aligned ?? 0).toFixed(1)}</strong> of those. The gap is <strong>{liftRange(me!.lift, me!.se)}</strong>{Math.abs(me!.z ?? 0) < 1.5 ? ' (small enough that chance could explain it)' : ''}. A small gap does not clear a member: their whole party may be funded by the same industries.</li>
                 {labor?.ranked && labor.index != null ? <li>Labor unions: voted the unions’ way on <strong>{labor.n_funded_aligned} of {labor.n_funded}</strong> votes where union PACs had given $10K or more; same-party peers would be expected to on about <strong>{(labor.peers_funded_aligned ?? 0).toFixed(1)}</strong> (labor index <strong>{labor.index.toFixed(0)}</strong>).</li> : null}
                 {me!.const_votes ? <li>On {me!.const_votes} landmark votes with a clear district majority, voted <strong>against</strong> that majority {me!.const_against} times{(me!.donors_over_district ?? 0) + (me!.district_over_donors ?? 0) > 0 ? `; sided with donors over the district ${me!.donors_over_district} time(s) and with the district over donors ${me!.district_over_donors}` : ''}.</li> : null}
               </ul>
@@ -201,4 +207,32 @@ function BeforeAfter({ line, votes }: { line: SectorLine; votes: DonorVote[] }) 
       </div>
     </div>
   )
+}
+
+function buildStory(a: { name: string; me: Scored | null; sectors: SectorLine[]; votes: DonorVote[] }): string[] {
+  const first = a.name.split(' ')[0]
+  const out: string[] = []
+  const lines = a.sectors.filter((s) => s.n_funded >= 3).sort((x, y) => y.money - x.money)
+  for (const s of lines.slice(0, 2)) {
+    out.push(`The ${s.label} industry had given ${first} ${fmtMoney(s.money)} in PAC money; on ${s.n_funded} votes where it had given $10K or more and had a clear side, ${first} voted its way ${s.n_aligned} times.`)
+  }
+  const ex = a.votes.filter((v) => v.district_match === 'direct' && v.aligned === 1 && v.with_district === 0).sort((x, y) => y.pac_6y - x.pac_6y).slice(0, 3)
+  if (ex.length) out.push(`Votes with the industry against what a clear majority at home wanted include: ${ex.map((v) => `${(v.desc || v.q || v.bill || '').slice(0, 55)} (${v.d.slice(0, 4)}, ${fmtMoney(v.pac_6y)} from the industry)`).join('; ')}.`)
+  const rev = a.votes.filter((v) => v.district_match === 'direct' && v.aligned === 0 && v.with_district === 1 && v.pac_6y >= 25000).sort((x, y) => y.pac_6y - x.pac_6y).slice(0, 2)
+  if (rev.length) out.push(`Votes against a funding industry, with their district, despite its money include: ${rev.map((v) => `${(v.desc || v.q || v.bill || '').slice(0, 55)} (${v.d.slice(0, 4)}, ${fmtMoney(v.pac_6y)} from the industry)`).join('; ')}.`)
+  const px = a.votes.filter((v) => v.district_match === 'proxy' && v.district_view === 'supports')
+  if (px.length >= 5) {
+    const pAgainst = px.filter((v) => v.aligned === 1 && v.with_district === 0).length
+    out.push(`On ${px.length} fossil votes, a clear majority in ${first}’s district backed letting the EPA regulate CO2 (a general stand-in, not a poll on each bill). ${first} sided with the industry against that view on ${pAgainst} of them.`)
+  }
+  const top = [...a.sectors].sort((x, y) => y.votes - x.votes)[0]
+  if (top) {
+    const sv = a.votes.filter((v) => v.sector === top.sector && v.subsector === top.subsector)
+    const lo = sv.filter((v) => v.pac_6y < 25000), hi = sv.filter((v) => v.pac_6y >= 25000)
+    if (lo.length >= 3 && hi.length >= 3) {
+      const c = (x: DonorVote[]) => `${x.filter((v) => v.aligned === 1).length} of ${x.length}`
+      out.push(`Before the ${top.label} industry had given $25K, ${first} voted its way ${c(lo)} times; once it had, ${c(hi)}.`)
+    }
+  }
+  return out
 }

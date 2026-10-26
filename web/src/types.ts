@@ -32,7 +32,7 @@ export type DonorVote = {
   d: string; congress: number; chamber: string; rn: number; bill: string; sector: string; subsector: string; helps_vote: 'Yea' | 'Nay'
   evidence_level: 'documented' | 'reported'; yea: number; aligned: number; pac_6y: number; pac_2y: number; share_6y: number | null
   q: string | null; desc: string | null; evidence: string; source_url: string
-  district_view: 'supports' | 'opposes' | 'uncertain' | 'unknown' | null; with_district: number | null; est: number | null; item: string | null
+  district_view: 'supports' | 'opposes' | 'uncertain' | 'unknown' | null; with_district: number | null; est: number | null; item: string | null; district_match?: 'direct' | 'proxy' | 'related' | null
 }
 export type Scored = {
   id: string; name: string; party: 'D' | 'R' | 'I'; state: string; chamber: 'House' | 'Senate'; last_congress: number; first_congress: number
@@ -41,12 +41,16 @@ export type Scored = {
   money_at_stake: number | null; top_sectors: string | null; ranked: boolean
   const_votes: number | null; const_against: number | null; const_rate: number | null; const_lift: number | null
   donors_over_district: number | null; district_over_donors: number | null
+  donor_district_votes?: number | null; proxy_donors_over?: number | null; proxy_district_over?: number | null; proxy_votes?: number | null; fossil_const_votes?: number | null; fossil_const_against?: number | null
 }
-export type Coverage = { coded_votes: number; roll_calls: number; bill_votes: number; ranked_members: number; landmark_votes: number }
+export type Coverage = { coded_votes: number; roll_calls: number; bill_votes: number; ranked_members: number; landmark_votes: number; votes_since_2008: number; coded_since_2008: number }
 export type SectorOption = { label: string; votes: number; members_ranked: number }
 export type Scoreboard = { members: Scored[]; coverage: Coverage; sectors: SectorOption[] }
 export type TimingRow = { group: string; spec: string; term: string; effect_pts: number; se_pts: number; n: number }
 export type SectorLine = {
   sector: string; subsector: string; label: string; votes: number; weight: number; money: number; n_funded: number; n_aligned: number
-  peers_aligned: number; lift: number; series: [string, number][]
+  peers_aligned: number; lift: number; se: number | null; z: number | null; series: [string, number][]
 }
+export type PlaceboRow = { vote_group: string; money_from: string; is_own: boolean; effect_pts: number; se_pts: number; n: number }
+export type CommitteeRow2 = { industry: string; outcome: string; effect: number; se: number; joiners: number; n: number }
+export type MethodData = { timing: TimingRow[]; placebo: PlaceboRow[]; committee: CommitteeRow2[] }

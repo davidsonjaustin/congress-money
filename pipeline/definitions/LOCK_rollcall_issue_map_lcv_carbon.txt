@@ -1,0 +1,8 @@
+locked 2026-10-26T19:17:47-04:00 (version 2)
+VERSION 2: regenerated from the corrected LCV direction file (see its lock).
+adf4156d6e1e23afccd6608df7ff0618381bff8c512ed56115bbaaf535e71354  rollcall_issue_map_lcv_carbon.csv
+
+--- version 1 lock (superseded) ---
+locked 2026-10-26T19:13:45-04:00
+LCV fossil-fuel votes mapped to the CES 'let the EPA regulate CO2' item as a PROXY for district/state opinion (match=proxy); House only from the 113th Congress on; Senate borrows the nearest survey Congress
+e1d6ca0a13eb9a1d4deb8b294d3ea1d34ff49f170d25f06c4c77821d403a4e16  rollcall_issue_map_lcv_carbon.csv

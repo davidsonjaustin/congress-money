@@ -64,7 +64,7 @@ export default function App() {
         <span className="spacer" />
         <button className="iconbtn" onClick={cycleTheme} title="Switch light / dark / follow system">Theme: {theme}</button>
       </header>
-      <div className="banner"><strong>Patterns, not proof.</strong> A high score means a member votes with the industries funding them more than their party peers do. It does not prove anyone was bought; read “Findings & method” for what the numbers can and can’t say.</div>
+      <div className="banner"><strong>Patterns, not proof.</strong> These numbers show how members voted next to the money they took and what their districts wanted. They show the pattern, not intent: a member may vote that way because they agree. “Findings & method” says what the data can and can’t show.</div>
 
       {route.page === 'score' && <main className="main"><Scoreboard onOpen={(id) => go(`#/case/${id}`)} onMethod={() => go('#/method')} /></main>}
       {route.page === 'case' && defs && <main className="main"><CaseFile key={route.id} id={route.id} defs={defs} onExplore={(id) => go(`#/explore/${id}`)} /></main>}

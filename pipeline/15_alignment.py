@@ -70,8 +70,11 @@ def build() -> None:
         FROM mv LEFT JOIN pac_sub_weekly w ON w.bioguide = mv.bioguide
         GROUP BY ALL)
     SELECT mv.*, ((mv.yea = 1 AND mv.helps_vote = 'Yea') OR (mv.yea = 0 AND mv.helps_vote = 'Nay'))::INT AS aligned,
-           m.pac_6y, m.pac_2y, m.pac_f2y, tot.pac_total_6y, CASE WHEN tot.pac_total_6y > 0 THEN m.pac_6y / tot.pac_total_6y END AS share_6y
-    FROM mv JOIN m USING (rc, bioguide, sector, subsector) JOIN tot USING (rc, bioguide, sector, subsector)""")
+           m.pac_6y, m.pac_2y, m.pac_f2y, tot.pac_total_6y, CASE WHEN tot.pac_total_6y > 0 THEN m.pac_6y / tot.pac_total_6y END AS share_6y,
+           coalesce(ls.z, 0) AS local_z, ls.share AS local_share
+    FROM mv JOIN m USING (rc, bioguide, sector, subsector) JOIN tot USING (rc, bioguide, sector, subsector)
+    LEFT JOIN local_stake ls ON ls.state = mv.state AND ls.year = least(year(mv.vdate), 2026)
+         AND ls.subsector = CASE WHEN mv.sector = 'Labor' THEN 'Labor' WHEN mv.subsector <> '' THEN mv.subsector END""")
 
 
 def lpm_fe(df: pd.DataFrame, y: str, xs: list[str], fe: str, cluster: str):

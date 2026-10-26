@@ -132,13 +132,18 @@ def match_lcv(rc: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         y, ch, roll = int(it["year"]), it["chamber"], int(it["roll"])
         c = (y - 1789) // 2 + 1
         sess2 = (y - 1789) % 2 == 1
-        vv = roll + (first_max.get((c, ch), 0) if sess2 else 0)
-        try:
-            r = idx.loc[(c, ch, vv)]
-        except KeyError:
-            bad.append({"title": it["title"], "why": f"no roll {vv} in {c}th {ch}"}); continue
-        if int(r["year"]) != y:
-            bad.append({"title": it["title"], "why": f"year mismatch {r['year']} vs {y}"}); continue
+        expected = roll + (first_max.get((c, ch), 0) if sess2 else 0)
+        # LCV's House roll numbers do not line up with Voteview's (an audit found 128 of 130 House matches wrong when matched by number alone),
+        # so match on the vote TALLY LCV prints for each vote: same Congress, chamber and year, same Yea and Nay counts, nearest to the expected number.
+        yes, no = it.get("yes"), it.get("no")
+        cand = rc[(rc["congress"] == c) & (rc["chamber"] == ch) & (rc["year"] == y) & (rc["yea_count"] == yes) & (rc["nay_count"] == no)]
+        if cand.empty:
+            bad.append({"title": it["title"], "why": f"no roll call with tally {yes}-{no} in {y}"}); continue
+        cand = cand.assign(dist=(cand["rollnumber"] - expected).abs()).sort_values("dist")
+        if int(cand.iloc[0]["dist"]) > 40:
+            bad.append({"title": it["title"], "why": f"tally {yes}-{no} found only far from expected roll {expected}"}); continue
+        r = cand.iloc[0]
+        vv = int(r["rollnumber"])
         tags = parse_tags(it.get("issues", ""))
         ov = len(words(it["title"] + " " + it.get("desc", "")[:200]) & r["text_words"]) / max(1, min(len(words(it["title"])), len(r["text_words"])))
         rec = {"year": y, "chamber": ch, "roll": roll, "vv": vv, "title": it["title"], "proEnv": it.get("proEnv"), "tags": "|".join(tags), "overlap": round(ov, 2),

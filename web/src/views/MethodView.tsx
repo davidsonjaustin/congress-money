@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { Definitions, Scored, TimingRow } from '../types'
+import type { CommitteeRow2, Definitions, PlaceboRow, Scored, TimingRow } from '../types'
 import { useWidth } from '../hooks'
 import AboutView from './AboutView'
 
 export default function MethodView({ defs }: { defs: Definitions }) {
   const [timing, setTiming] = useState<TimingRow[]>([])
+  const [placebo, setPlacebo] = useState<PlaceboRow[]>([])
+  const [committee, setCommittee] = useState<CommitteeRow2[]>([])
   const [board, setBoard] = useState<Scored[]>([])
   useEffect(() => {
-    api.method().then((r) => setTiming(r.timing)).catch(() => undefined)
+    api.method().then((r) => { setTiming(r.timing); setPlacebo(r.placebo); setCommittee(r.committee) }).catch(() => undefined)
     api.scoreboard().then((r) => setBoard(r.members)).catch(() => undefined)
   }, [])
   const ranked = board.filter((m) => m.ranked && m.loyalty != null)
@@ -39,11 +41,38 @@ export default function MethodView({ defs }: { defs: Definitions }) {
         <TimingChart rows={timing.filter((r) => r.spec === spec)} />
         <TimingReading rows={timing.filter((r) => r.spec === spec)} />
 
-        <h3>How the index works</h3>
+        <h3>3. Money follows committee seats, not votes</h3>
+        <p>
+          When a member joins a committee that oversees an industry, that industry’s PAC money to them jumps, because donors follow the gavel. If money were buying votes, how the member
+          votes should shift after joining as well. We compared member-years before and after joining with members who never joined (same member, same year).
+        </p>
+        <CommitteeBlock rows={committee} />
+
+        <h3>4. Is it this industry’s money, or any money?</h3>
+        <p>
+          For each group of votes we put PAC money from every industry into one model at once. If money moved votes, the industry the vote concerns should stand out.
+          Bars show points more likely to vote the industry’s way per $50K, own industry first.
+        </p>
+        <PlaceboBlock rows={placebo} />
+
+        <h3>5. Does it hold up against local interests?</h3>
+        <p>
+          A member from a coal or oil state has a local reason to vote with those industries. The expected-vote model therefore includes how much of the member’s state economy
+          (private employment, Census) rests on the industry, or how many residents are in a union. Adding it barely changed who ranks at the top.
+        </p>
+
+        <h3>6. How reliable are the coded votes?</h3>
         <ul>
-          <li>For each coded vote, find what chance a same-party colleague with the same ideology and district lean had of voting the donors’ way on that exact vote.</li>
-          <li>Count each of the member’s votes in proportion to how much that sector had given them in the six years before (full weight at $50K).</li>
-          <li>The index is 50 plus the average gap between what the member did and what peers would do, shrunk toward 50 when the record is thin. 50 means “votes like same-party peers.”</li>
+          <li>We checked 30 random LCV-based oil and gas votes. The check exposed a real bug: 128 of 130 House votes had been tied to the wrong roll call because LCV’s House numbering differs. They are now matched on each vote’s printed tally, and all Senate matches were already right.</li>
+          <li>Industry statements are only partly checked. For 8 of 30 sampled votes we searched for the industry’s own position: two were clearly confirmed (API’s letter backing H.R. 4899, and API’s opposition to the methane fee in the Build Back Better Act), one only partly (oil and gas associations applauded the House Interior bill with its methane riders, but not that specific amendment), and five turned up no statement either way. The other 22 have not been checked against the industry’s side yet, so we do not yet have an error rate for the coding. Votes coded from LCV’s scorecard carry the lower “scorecard” evidence tier, and the “Strictly sourced only” toggle drops them.</li>
+          <li>Union positions come from the AFL-CIO, which speaks for most but not every union. Votes about voting rights, policing and similar causes were dropped because they are not union-donor interests.</li>
+        </ul>
+
+        <h3>How the tiers work</h3>
+        <ul>
+          <li>For each coded vote, find what chance a same-party colleague with the same ideology, district lean and local industry stake had of voting the industry’s way on that exact vote.</li>
+          <li>Count each of the member’s votes in proportion to how much that industry had given them in the six years before (full weight at $50K).</li>
+          <li>The gap is the average difference between what the member did and what peers would do, shrunk toward zero when the record is thin. “Far more loyal” needs a gap of 20+ points we are very sure of; “more loyal” 8+ points we are fairly sure of.</li>
           <li>A member is ranked only with about three votes’ worth of real funding. Everyone else is shown as “not ranked yet,” never as clean.</li>
         </ul>
 
@@ -126,5 +155,63 @@ function TimingReading({ rows }: { rows: TimingRow[] }) {
         one gift mattering, and rewarding a vote after the fact is still money following votes.
       </p>
     </>
+  )
+}
+
+function CommitteeBlock({ rows }: { rows: CommitteeRow2[] }) {
+  if (!rows.length) return <div className="hint">Loading...</div>
+  const inds = ['oil and gas', 'banks', 'labor']
+  return (
+    <div className="scroll-x">
+      <table className="data">
+        <thead><tr><th style={{ textAlign: 'left' }}>Industry</th><th>Members who joined</th><th>Their PAC money from it after joining</th><th>Their votes the industry's way after joining</th></tr></thead>
+        <tbody>
+          {inds.map((i) => {
+            const m = rows.find((r) => r.industry === i && r.outcome.startsWith('sector money'))
+            const v = rows.find((r) => r.industry === i && r.outcome.startsWith('votes'))
+            if (!m || !v) return null
+            const pct = (Math.exp(m.effect) - 1) * 100
+            return (
+              <tr key={i}>
+                <td style={{ textAlign: 'left' }}>{i === 'labor' ? 'Unions' : i === 'banks' ? 'Banks' : 'Oil and gas'}</td>
+                <td>{m.joiners}</td>
+                <td>{pct >= 0 ? '+' : ''}{pct.toFixed(0)}%</td>
+                <td>{v.effect >= 0 ? '+' : ''}{v.effect.toFixed(1)} points (range {(v.effect - 1.64 * v.se).toFixed(1)} to {(v.effect + 1.64 * v.se).toFixed(1)})</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      <div className="hint">Votes: points more likely to vote the industry's way than same-party peers. Banks have few coded votes, so that range is wide.</div>
+    </div>
+  )
+}
+
+function PlaceboBlock({ rows }: { rows: PlaceboRow[] }) {
+  if (!rows.length) return <div className="hint">Loading...</div>
+  const groups: [string, string][] = [['labor votes', 'Votes unions care about'], ['oil and gas votes', 'Oil and gas votes'], ['bank votes', 'Bank votes']]
+  return (
+    <div className="threecol">
+      {groups.map(([g, title]) => {
+        const sub = rows.filter((r) => r.vote_group === g)
+        const own = sub.find((r) => r.is_own)
+        const others = sub.filter((r) => !r.is_own).sort((a, b) => b.effect_pts - a.effect_pts).slice(0, 4)
+        const show = [own, ...others].filter((r): r is PlaceboRow => !!r)
+        const max = Math.max(1, ...show.map((r) => Math.abs(r.effect_pts)))
+        return (
+          <div key={g}>
+            <div className="fh">{title}</div>
+            {show.map((r) => (
+              <div key={r.money_from} className="hrow" style={{ gridTemplateColumns: '120px 1fr 54px' }}>
+                <span className="nm" style={{ fontWeight: r.is_own ? 600 : 400 }}>{r.is_own ? '* ' : ''}{r.money_from}</span>
+                <span className="track"><i style={{ width: `${Math.max(2, (100 * Math.abs(r.effect_pts)) / max)}%`, background: r.is_own ? 'var(--s2)' : 'var(--other)' }} /></span>
+                <span className="amt">{r.effect_pts >= 0 ? '+' : ''}{r.effect_pts.toFixed(0)}</span>
+              </div>
+            ))}
+            <div className="hint">* = the industry the votes concern</div>
+          </div>
+        )
+      })}
+    </div>
   )
 }

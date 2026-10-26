@@ -192,13 +192,15 @@ def scoreboard(variant: str = "all", sector: str = "All business"):
         members = rows(con, """SELECT i.bioguide AS id, i.name, i.party, i.state, i.chamber, i.last_c AS last_congress, i.first_c AS first_congress,
                                       s.votes_coded, s.weight, s.n_funded, s.n_funded_aligned, s.peers_funded_aligned, s.loyalty, s.peers, s.lift, s.se, s.z,
                                       s."index", s.money_at_stake, s.top_sectors, coalesce(s.ranked, false) AS ranked,
-                                      i.const_votes, i.const_against, i.const_rate, i.const_lift, i.donors_over_district, i.district_over_donors
+                                      i.const_votes, i.const_against, i.const_rate, i.const_lift, i.donors_over_district, i.district_over_donors, i.donor_district_votes, i.proxy_donors_over, i.proxy_district_over, i.proxy_votes, i.fossil_const_votes, i.fossil_const_against
                                FROM member_info i LEFT JOIN scores s ON s.bioguide = i.bioguide AND s.variant = ? AND s.sector_label = ?
                                WHERE s.bioguide IS NOT NULL OR i.const_votes IS NOT NULL""", [variant, sector])
         sectors = rows(con, "SELECT sector_label AS label, votes, members_ranked FROM coverage_stats WHERE variant = ? ORDER BY votes DESC", [variant])
         cov = rows(con, """SELECT (SELECT count(*) FROM c.rollcalls) AS roll_calls,
                                   (SELECT count(*) FROM rollcall_topic WHERE policy_area IS NOT NULL) AS bill_votes,
-                                  (SELECT count(DISTINCT (congress, chamber, rollnumber)) FROM vote_vs_district) AS landmark_votes""")[0]
+                                  (SELECT count(DISTINCT (congress, chamber, rollnumber)) FROM vote_vs_district) AS landmark_votes,
+                                  (SELECT count(*) FROM c.rollcalls WHERE vote_date >= DATE '2008-01-01' AND yea_count + nay_count >= 50) AS votes_since_2008,
+                                  (SELECT count(DISTINCT (congress, chamber, rollnumber)) FROM vote_direction WHERE date >= DATE '2008-01-01') AS coded_since_2008""")[0]
         mine = next((x for x in sectors if x["label"] == sector), {"votes": 0, "members_ranked": 0})
         cov.update({"coded_votes": mine["votes"], "ranked_members": mine["members_ranked"]})
     return {"members": members, "coverage": cov, "sectors": sectors}
@@ -208,7 +210,9 @@ def scoreboard(variant: str = "all", sector: str = "All business"):
 def method():
     with db() as con:
         timing = rows(con, 'SELECT "group", spec, term, effect_pts, se_pts, n FROM timing_test')
-    return {"timing": timing}
+        placebo = rows(con, "SELECT vote_group, money_from, is_own, effect_pts, se_pts, n FROM placebo_test")
+        committee = rows(con, "SELECT industry, outcome, effect, se, joiners, n FROM committee_did")
+    return {"timing": timing, "placebo": placebo, "committee": committee}
 
 
 @app.get("/api/member/{bg}/sectors")
@@ -216,7 +220,7 @@ def member_sectors(bg: str):
     """Per coded donor sector: votes, money, and a monthly PAC-gift series (for the before/after chart)."""
     with db() as con:
         lines = rows(con, """SELECT sector, subsector, label, votes, round(weight, 2) AS weight, round(money) AS money, n_funded, n_aligned,
-                                    round(peers_aligned, 2) AS peers_aligned, round(lift, 3) AS lift
+                                    round(peers_aligned, 2) AS peers_aligned, round(lift, 3) AS lift, round(se, 3) AS se, round(z, 2) AS z
                              FROM member_sector_scores WHERE bioguide = ? ORDER BY money DESC""", [bg])
         for ln in lines:
             ln["series"] = [[r["m"], r["amt"]] for r in rows(con, """
@@ -234,7 +238,7 @@ def member_donor_votes(bg: str):
             SELECT strftime(a.vdate, '%Y-%m-%d') AS d, a.congress, a.chamber, a.rollnumber AS rn, a.bill, a.sector, a.subsector, a.helps_vote,
                    a.evidence_level, a.yea, a.aligned, round(a.pac_6y) AS pac_6y, round(a.pac_2y) AS pac_2y, round(a.share_6y, 3) AS share_6y,
                    r.vote_question AS q, left(r.vote_desc, 110) AS desc, dir.evidence, dir.source_url,
-                   v.district_view, v.with_district, round(v.est, 3) AS est, v.item
+                   v.district_view, v.with_district, round(v.est, 3) AS est, v.item, v."match" AS district_match
             FROM donor_alignment a
             JOIN c.rollcalls r ON r.congress = a.congress AND r.chamber = a.chamber AND r.rollnumber = a.rollnumber
             JOIN vote_direction dir ON dir.congress = a.congress AND dir.chamber = a.chamber AND dir.rollnumber = a.rollnumber
