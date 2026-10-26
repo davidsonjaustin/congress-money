@@ -55,7 +55,7 @@ export type PlaceboRow = { vote_group: string; money_from: string; is_own: boole
 export type CommitteeRow2 = { industry: string; outcome: string; effect: number; se: number; joiners: number; n: number }
 export type MethodData = { timing: TimingRow[]; placebo: PlaceboRow[]; committee: CommitteeRow2[] }
 export type AllVotesIndustry = { label: string; votes: number; strong_only: number; link_only: number; link_only_null: number; link_before: number | null; link_before_null: number | null; link_after: number | null }
-export type AllVotesSummary = { thresholds: { only: number; joint_b: number; joint_a: number }; industries: AllVotesIndustry[]; tested: number; all_votes: number; validation: { tier: string; n: number; agree: number }[] }
+export type AllVotesSummary = { thresholds: { only: number; joint_b: number; joint_a: number }; industries: AllVotesIndustry[]; tested: number; all_votes: number; validation: { tier: string; n: number; agree: number }[]; funded: { label: string; votes: number; member_votes: number; aligned: number; expected: number }[] }
 export type TopVote = {
   congress: number; chamber: string; rollnumber: number; d: string; label: string; n: number; b_only: number; t_only: number; t_before: number | null; t_after: number | null
   q: string | null; descr: string | null; title: string | null; bill: string | null; policy_area: string | null; result: string | null; yeas: number | null; nays: number | null; coded_side: 'Yea' | 'Nay' | null

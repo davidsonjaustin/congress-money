@@ -237,7 +237,9 @@ def allvotes_summary():
             SELECT d.evidence_level AS tier, count(*) AS n, sum(((m.b_only > 0) = (d.helps_vote = 'Yea'))::INT) AS agree
             FROM all_vote_money m JOIN vote_direction d ON d.congress = m.congress AND d.chamber = m.chamber AND d.rollnumber = m.rollnumber AND {LABEL_SQL} = m.label
             WHERE abs(m.t_only) >= 2 GROUP BY 1""")
-    return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val}
+        funded = rows(con, """SELECT label, count(DISTINCT (congress, chamber, rollnumber)) AS votes, count(*) AS member_votes, avg(aligned) AS aligned, avg(p_exp) AS expected
+                              FROM inferred_alignment WHERE pac_6y >= 10000 GROUP BY 1 ORDER BY (avg(aligned) - avg(p_exp)) DESC""")
+    return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val, "funded": funded}
 
 
 @app.get("/api/allvotes/top")

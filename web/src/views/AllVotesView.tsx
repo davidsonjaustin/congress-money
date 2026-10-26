@@ -77,6 +77,28 @@ export default function AllVotesView() {
         </ul>
       </div>
 
+      <div className="card prose">
+        <h2>When the money lines up with a vote, how much is the money, and how much is politics?</h2>
+        <div className="sub">
+          On the votes where an industry’s money lined up strongly, members who had received $10K or more from that industry in the prior six years voted the way the money pulls this often.
+          “Predicted” is how often they would have anyway given their ideology within their party, party, district lean and district ideology, estimated without using that industry’s money.
+        </div>
+        <div className="scroll-x">
+          <table className="data">
+            <thead><tr><th style={{ textAlign: 'left' }}>Industry</th><th>Strong-link votes</th><th>Voted with the money</th><th>Predicted by politics</th><th>Gap</th></tr></thead>
+            <tbody>
+              {(sum?.funded ?? []).filter((r) => !NOT_INDUSTRY.includes(r.label)).map((r) => (
+                <tr key={r.label}>
+                  <td style={{ textAlign: 'left' }}>{nice(r.label)}</td><td>{r.votes.toLocaleString()}</td><td>{pct(r.aligned, 0)}</td><td>{pct(r.expected, 0)}</td>
+                  <td>{r.aligned - r.expected >= 0 ? '+' : '−'}{Math.abs(100 * (r.aligned - r.expected)).toFixed(1)} pts</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="hint">These votes were picked because the money lined up with them, so every gap is pushed upward by how they were chosen. Compare industries with each other, not against zero.</div>
+      </div>
+
       <div className="card">
         <h2>Votes where an industry’s money lines up most strongly</h2>
         <div className="sub">
