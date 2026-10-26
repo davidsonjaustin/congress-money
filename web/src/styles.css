@@ -190,3 +190,13 @@ details.adv summary { cursor: pointer; color: var(--ink-2); font-size: 12.5px; }
 .vrange { color: var(--ink-2); margin-top: 6px; font-size: 13px; }
 .story { margin-bottom: 10px; }
 .story p { margin: 0 0 6px; font-size: 14.5px; }
+
+/* ---- every-vote view ---- */
+.legend3 { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0; font-size: 12.5px; color: var(--ink-2); }
+.legend3 i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.trio { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; margin: 8px 0; }
+.trio .nm { font-size: 13px; }
+.tracks { display: grid; gap: 3px; }
+.tracks .track { position: relative; display: flex; align-items: center; height: 11px; background: transparent; }
+.tracks .track i { display: block; height: 8px; border-radius: 0 4px 4px 0; min-width: 2px; }
+.tracks .track b { font-weight: 500; font-size: 11px; color: var(--ink-2); margin-left: 6px; }

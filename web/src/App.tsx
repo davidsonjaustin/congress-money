@@ -8,8 +8,9 @@ import CaseFile from './views/CaseFile'
 import MemberView from './views/MemberView'
 import LeaderboardView from './views/LeaderboardView'
 import MethodView from './views/MethodView'
+import AllVotesView from './views/AllVotesView'
 
-type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method'; id: string }
+type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method' | 'votes'; id: string }
 
 function parse(hash: string): Route {
   const [, page, id] = hash.replace(/^#/, '').split('/')
@@ -17,6 +18,7 @@ function parse(hash: string): Route {
   if (page === 'explore') return { page: 'explore', id: id ?? '' }
   if (page === 'sectors') return { page: 'sectors', id: '' }
   if (page === 'method') return { page: 'method', id: '' }
+  if (page === 'votes') return { page: 'votes', id: '' }
   return { page: 'score', id: '' }
 }
 
@@ -50,7 +52,7 @@ export default function App() {
 
   if (err) return <div className="card" style={{ margin: 24 }}>Could not reach the data server ({err}). Start it with <code>run.bat</code>.</div>
 
-  const tabs: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'], ['explore', 'Explore the data', '#/explore'],
+  const tabs: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'], ['votes', 'Every vote', '#/votes'], ['explore', 'Explore the data', '#/explore'],
     ['sectors', 'Sector money', '#/sectors'], ['method', 'Findings & method', '#/method']]
   return (
     <div className="app">
@@ -94,6 +96,7 @@ export default function App() {
         </div>
       )}
       {route.page === 'sectors' && defs && <main className="main"><LeaderboardView defs={defs} onOpen={(id) => go(`#/case/${id}`)} /></main>}
+      {route.page === 'votes' && <main className="main"><AllVotesView /></main>}
       {route.page === 'method' && defs && <main className="main"><MethodView defs={defs} /></main>}
     </div>
   )

@@ -68,6 +68,14 @@ export default function MethodView({ defs }: { defs: Definitions }) {
           <li>Union positions come from the AFL-CIO, which speaks for most but not every union. Votes about voting rights, policing and similar causes were dropped because they are not union-donor interests.</li>
         </ul>
 
+        <h3>7. The every-vote screen</h3>
+        <ul>
+          <li>The coded votes above cover only a small slice of the roll calls since 2008, because each needs a documented industry side. The “Every vote” page tests all of them (14,952 with enough members on both sides) without needing a side.</li>
+          <li>For each vote and industry it asks whether members with more of that industry’s money in the two years before voted differently, holding ideology within party, party, district lean, district ideology and total fundraising fixed. Random money, shuffled within party, shows what chance looks like.</li>
+          <li>It validates: where we already know the industry’s side, a strong link pointed to that side in 177 of 182 cases.</li>
+          <li>It cannot show intent. Money that arrives after a vote predicts votes almost as well as money before it for most industries, so much of the link is donors backing members who already vote their way. Strong links also appear on votes with no obvious industry stake, so each is a lead, not a finding.</li>
+        </ul>
+
         <h3>How the tiers work</h3>
         <ul>
           <li>For each coded vote, find what chance a same-party colleague with the same ideology, district lean and local industry stake had of voting the industry’s way on that exact vote.</li>

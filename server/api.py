@@ -215,6 +215,47 @@ def method():
     return {"timing": timing, "placebo": placebo, "committee": committee}
 
 
+LABEL_SQL = "CASE WHEN d.subsector <> '' THEN replace(d.subsector, '_', ' ') ELSE replace(split_part(d.sector, ',', 1), ' & Consumer', '') END"
+
+
+@app.get("/api/allvotes/summary")
+def allvotes_summary():
+    """Per industry, across every tested roll call since 2008: how often its money predicts the vote, against shuffled money."""
+    with db() as con:
+        thr = rows(con, """SELECT quantile_cont(abs(t_only), 0.999) AS only, quantile_cont(abs(t_before), 0.999) AS joint_b, quantile_cont(abs(t_after), 0.999) AS joint_a FROM all_vote_null""")[0]
+        per = rows(con, f"""
+            SELECT r.label, count(r.t_only) AS votes,
+                   avg((abs(r.t_only) >= {thr['only']})::INT) AS strong_only,
+                   avg((abs(r.t_only) >= 2)::INT) AS link_only, avg((abs(n.t_only) >= 2)::INT) AS link_only_null,
+                   avg(CASE WHEN r.has_after THEN (abs(r.t_before) >= 2)::INT END) AS link_before, avg(CASE WHEN r.has_after THEN (abs(n.t_before) >= 2)::INT END) AS link_before_null,
+                   avg(CASE WHEN r.has_after THEN (abs(r.t_after) >= 2)::INT END) AS link_after
+            FROM all_vote_money r JOIN all_vote_null n USING (congress, chamber, rollnumber, label)
+            GROUP BY 1 ORDER BY strong_only DESC""")
+        tested = rows(con, "SELECT count(DISTINCT (congress, chamber, rollnumber)) AS tested FROM all_vote_money")[0]["tested"]
+        total = rows(con, "SELECT count(*) AS n FROM c.rollcalls WHERE vote_date >= DATE '2008-01-01' AND yea_count + nay_count >= 50")[0]["n"]
+        val = rows(con, f"""
+            SELECT d.evidence_level AS tier, count(*) AS n, sum(((m.b_only > 0) = (d.helps_vote = 'Yea'))::INT) AS agree
+            FROM all_vote_money m JOIN vote_direction d ON d.congress = m.congress AND d.chamber = m.chamber AND d.rollnumber = m.rollnumber AND {LABEL_SQL} = m.label
+            WHERE abs(m.t_only) >= 2 GROUP BY 1""")
+    return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val}
+
+
+@app.get("/api/allvotes/top")
+def allvotes_top(label: str = "", min_t: float = 3.15, limit: int = 60, offset: int = 0):
+    """Roll calls where an industry's pre-vote PAC money predicts the vote most strongly, with what the vote was."""
+    with db() as con:
+        r = rows(con, f"""
+            SELECT m.congress, m.chamber, m.rollnumber, strftime(m.vdate, '%Y-%m-%d') AS d, m.label, m.n,
+                   round(m.b_only, 2) AS b_only, round(m.t_only, 2) AS t_only, round(m.t_before, 2) AS t_before, round(m.t_after, 2) AS t_after,
+                   t.vote_question AS q, t.vote_desc AS descr, t.title, t.bill_number AS bill, t.policy_area, t.vote_result AS result, t.yea_count AS yeas, t.nay_count AS nays,
+                   (SELECT any_value(d.helps_vote) FROM vote_direction d WHERE d.congress = m.congress AND d.chamber = m.chamber AND d.rollnumber = m.rollnumber AND {LABEL_SQL} = m.label) AS coded_side
+            FROM all_vote_money m LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber)
+            WHERE (? = '' OR m.label = ?) AND abs(m.t_only) >= ?
+            ORDER BY abs(m.t_only) DESC LIMIT ? OFFSET ?""", [label, label, min_t, limit, offset])
+        n = rows(con, "SELECT count(*) AS n FROM all_vote_money WHERE (? = '' OR label = ?) AND abs(t_only) >= ?", [label, label, min_t])[0]["n"]
+    return {"rows": r, "total": n}
+
+
 @app.get("/api/member/{bg}/sectors")
 def member_sectors(bg: str):
     """Per coded donor sector: votes, money, and a monthly PAC-gift series (for the before/after chart)."""

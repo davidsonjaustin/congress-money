@@ -33,6 +33,9 @@ own districts said, and tests whether money arrives before or after the votes.
 | 15 alignment | per member x coded vote: voted the donors' way? sector PAC money before/after |
 | 16 scores | donor-loyalty index, against-constituents rate, timing tests |
 | 17 import positions | turns AFL-CIO / LCV scorecard positions into direction rows |
+| 18 local industry | state industry employment (Census CBP) and union density (CES) as local-stake controls |
+| 19 robustness | placebo-industry and committee-join difference-in-differences tests |
+| 20 all votes money | tests every roll call since 2008 against every industry's PAC money, direction-free, with before/after and shuffled-money checks |
 
 ## Locked definitions (`pipeline/definitions/`)
 Which bills touch which sector, and **which way each vote helps each industry**, are written down and hashed (`LOCK*.txt`) *before* any model
@@ -45,6 +48,8 @@ Cooperative Election Study (cumulative + policy preferences + 2010 roll-call bat
 vote are in the `source_url` column of the `vote_direction*.csv` files.
 
 ## Known limits
-Coverage of coded votes is uneven (many for fossil fuels and labor, few for banks and pharma, none yet for tech, agriculture or defense); scores
-compare members with same-party peers so party-line members cannot stand out; PAC gifts only (individual donors and outside spending are in the
-explorer but not scored); no control yet for a member representing a local industry; district opinion covers 39 landmark votes.
+Only ~300 of ~18,000 roll calls since 2008 have a documented industry side (mostly oil, gas, coal and labor); the every-vote screen (step 20) covers the rest
+without needing a side but cannot show intent. District opinion is a direct survey measure for only a handful of coded votes; the fossil votes use one
+climate-opinion item as a proxy and are reported separately. PAC gifts only in the scores (individual donors and outside spending are in the explorer).
+Money arriving after a vote predicts votes almost as well as money before it for most industries, so the data shows money and votes lining up, not that
+money moved them. No campaign-promise data yet.
