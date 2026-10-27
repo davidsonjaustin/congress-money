@@ -79,6 +79,14 @@ def score_rows(g: pd.DataFrame) -> pd.Series:
 def build_scores() -> pd.DataFrame:
     raw = con.execute("SELECT * FROM donor_alignment").df()
     raw["label"] = [sector_label(a, b) for a, b in zip(raw["sector"], raw["subsector"])]
+    # LCV fossil votes were coded for oil and gas AND coal. A coal row only means something when coal itself was in play, so a scorecard-tier coal row
+    # is kept only if coal-industry clients named the bill in lobbying filings (audit: only 48% of coal rows passed, against 80% for oil and gas).
+    if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'lobbied_votes'").fetchone()[0] > 0:
+        lv = con.execute("SELECT DISTINCT congress, chamber, rollnumber, label, 1 AS _lob FROM lobbied_votes").df()
+        flag = raw[["congress", "chamber", "rollnumber", "label"]].merge(lv, how="left", on=["congress", "chamber", "rollnumber", "label"])["_lob"].isna().to_numpy()
+        drop = ((raw["label"] == "coal mining") & (raw["evidence_level"] == "scorecard")).to_numpy() & flag
+        print(f"coal scorecard rows dropped for lack of coal lobbying: {int(drop.sum())} of {int(((raw['label'] == 'coal mining') & (raw['evidence_level'] == 'scorecard')).sum())}")
+        raw = raw[~drop].reset_index(drop=True)
     frames, cov = [], []
     has_inferred = con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'inferred_alignment'").fetchone()[0] > 0
     has_lobbied = has_inferred and con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'lobbied_votes'").fetchone()[0] > 0

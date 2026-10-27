@@ -31,8 +31,9 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
   const filtered = useMemo(() => data.filter((m) =>
     (!chamber || m.chamber === chamber) && (!party || m.party === party) && (!era || (era === 'now' ? m.last_congress === 119 : m.last_congress < 119))), [data, chamber, party, era])
   const ranked = useMemo(() => filtered.filter((m) => m.ranked && m.lift != null), [filtered])
-  const loyal = useMemo(() => [...ranked].sort((a, b) => (b.loyalty! - a.loyalty!) || ((b.money_at_stake ?? 0) - (a.money_at_stake ?? 0))).slice(0, 10), [ranked])
-  const resist = useMemo(() => [...ranked].filter((m) => (m.weight ?? 0) >= 3).sort((a, b) => (a.loyalty! - b.loyalty!) || ((b.money_at_stake ?? 0) - (a.money_at_stake ?? 0))).slice(0, 10), [ranked])
+  const minW = variant === 'inferred' || variant === 'lobbied' ? 10 : 3     // many more votes per member in the every-vote views, so ask for a longer record
+  const loyal = useMemo(() => [...ranked].filter((m) => (m.weight ?? 0) >= minW).sort((a, b) => (b.loyalty! - a.loyalty!) || ((b.money_at_stake ?? 0) - (a.money_at_stake ?? 0))).slice(0, 10), [ranked, minW])
+  const resist = useMemo(() => [...ranked].filter((m) => (m.weight ?? 0) >= minW).sort((a, b) => (a.loyalty! - b.loyalty!) || ((b.money_at_stake ?? 0) - (a.money_at_stake ?? 0))).slice(0, 10), [ranked, minW])
   const overHome = useMemo(() => filtered.filter((m) => (m.donors_over_district ?? 0) >= 1)
     .sort((a, b) => (b.donors_over_district! - a.donors_over_district!) || (b.donors_over_district! / (b.donor_district_votes || 1) - a.donors_over_district! / (a.donor_district_votes || 1))).slice(0, 10), [filtered])
   const overHomeProxy = useMemo(() => filtered.filter((m) => (m.proxy_votes ?? 0) >= 10 && (m.proxy_donors_over ?? 0) >= 1)

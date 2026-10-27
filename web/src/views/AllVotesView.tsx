@@ -4,6 +4,7 @@ import type { AllVotesSummary, TopVotes } from '../types'
 
 const pct = (v: number | null | undefined, d = 1) => (v == null ? '–' : `${(100 * v).toFixed(d)}%`)
 const NOT_INDUSTRY = ['Candidate committee', 'Leadership PAC', 'Ideological / Single-Issue / Unsorted', 'Business (sector not yet assigned)']
+const DOSE: Record<string, string> = { '1': 'Under $1K', '2': '$1K to $10K', '3': '$10K to $50K', '4': '$50K to $200K', '5': '$200K or more' }
 const NAMES: Record<string, string> = { Labor: 'Labor unions', 'oil gas': 'Oil and gas', 'coal mining': 'Coal mining', 'electric utilities': 'Electric utilities', 'physicians clinicians': 'Physicians and clinicians' }
 const nice = (l: string) => NAMES[l] ?? l.replace(/^./, (c) => c.toUpperCase())
 
@@ -96,6 +97,22 @@ export default function AllVotesView() {
             </tbody>
           </table>
         </div>
+        <h3>The more an industry gave, the more members voted its way</h3>
+        <div className="sub">Same votes, grouped by how much the industry had given that member in the prior six years (business industries; unions are left out of this table).</div>
+        <div className="bars">
+          {(sum?.dose ?? []).map((r) => {
+            const gap = 100 * (r.aligned - r.expected)
+            const w = Math.min(100, (Math.abs(gap) / 9) * 100)
+            return (
+              <div key={r.k} className="hrow" style={{ gridTemplateColumns: '130px 1fr 150px' }}>
+                <span className="nm">{DOSE[r.k]}</span>
+                <span className="track"><i style={{ width: `${Math.max(2, w)}%`, background: gap >= 0 ? 'var(--s2)' : 'var(--muted)' }} /></span>
+                <span className="amt">{gap >= 0 ? '+' : '−'}{Math.abs(gap).toFixed(1)} pts · {pct(r.aligned, 0)} vs {pct(r.expected, 0)}</span>
+              </div>
+            )
+          })}
+        </div>
+        <div className="hint">Each row: share of votes cast the way the money pulls, against what their ideology, party and district predict, and the difference. Members who got little from an industry voted its way less than their politics predicts; those who got the most voted its way more. This lines up with money moving votes, and it equally fits donors giving most to members who already vote their way, which the before-and-after test above cannot rule out for most industries.</div>
         <div className="hint">These votes were picked because the money lined up with them, so every gap is pushed upward by how they were chosen. Compare industries with each other, not against zero.</div>
       </div>
 

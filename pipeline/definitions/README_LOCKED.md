@@ -20,3 +20,9 @@ Rules
    Enforcement, Economics and Public Finance (appropriations/budget -- too heterogeneous), Social Welfare, Families,
    Civil Rights, Native Americans, Sports, Arts, Social Sciences, Private Legislation, International Affairs,
    Government Operations.
+
+## Scoring-time relevance filter (added 2026-10-26, not an edit to any locked file)
+`16_scores.py` drops a scorecard-tier **coal mining** row unless coal-industry clients named that bill in Senate lobbying filings (`lobbied_votes`, from
+`22_lobbied_votes.py`). Reason: the LCV fossil votes were coded for both oil and gas and coal, but an audit found coal clients lobbied only 48% of those bills
+(oil and gas 80%, labor 83%), so many coal rows were oil-and-gas votes with no sign coal was in play. The locked direction files are unchanged; the filter prints
+how many rows it drops each run.

@@ -239,7 +239,10 @@ def allvotes_summary():
             WHERE abs(m.t_only) >= 2 GROUP BY 1""")
         funded = rows(con, """SELECT label, count(DISTINCT (congress, chamber, rollnumber)) AS votes, count(*) AS member_votes, avg(aligned) AS aligned, avg(p_exp) AS expected
                               FROM inferred_alignment WHERE pac_6y >= 10000 GROUP BY 1 ORDER BY (avg(aligned) - avg(p_exp)) DESC""")
-    return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val, "funded": funded}
+        dose = rows(con, """SELECT CASE WHEN pac_6y < 1000 THEN '1' WHEN pac_6y < 10000 THEN '2' WHEN pac_6y < 50000 THEN '3' WHEN pac_6y < 200000 THEN '4' ELSE '5' END AS k,
+                                   count(*) AS member_votes, avg(aligned) AS aligned, avg(p_exp) AS expected
+                            FROM inferred_alignment WHERE label <> 'Labor' GROUP BY 1 ORDER BY 1""")
+    return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val, "funded": funded, "dose": dose}
 
 
 @app.get("/api/allvotes/top")
