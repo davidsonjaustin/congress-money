@@ -41,7 +41,9 @@ def label_of(sector: str, sub: str) -> str:
     return sub.replace("_", " ") if sub else sector.split(",")[0].replace(" & Consumer", "")
 
 
-def classify(text: str) -> str | None:
+def classify(text) -> str | None:
+    if not isinstance(text, str):
+        return None
     text = text.upper()
     for sector, rx in s03.RULES_RE:
         if sector == "Labor" and NOT_LABOR.search(text):

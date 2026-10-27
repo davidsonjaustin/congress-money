@@ -18,7 +18,7 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
   const [era, setEra] = useState('')
   const [q, setQ] = useState('')
   const [showAll, setShowAll] = useState(false)
-  const [variant, setVariant] = useState<'all' | 'core' | 'inferred'>('inferred')
+  const [variant, setVariant] = useState<'all' | 'core' | 'inferred' | 'lobbied'>('lobbied')
   const [sector, setSector] = useState('All business')
   const [sectors, setSectors] = useState<SectorOption[]>([])
   const [sort, setSort] = useState<{ key: keyof Scored; dir: 1 | -1 }>({ key: 'loyalty', dir: -1 })
@@ -78,10 +78,10 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
             ))}</div>
           )}
         </div>
-        <div className="seg" title="Every vote: any roll call where this industry's money lines up strongly with how members voted, taking the side its money pulls toward. Documented side: votes where the industry's position is known from scorecards or its own statements. Strictly sourced: only the industry's own statements.">
-          {[['inferred', 'Every vote since 2008'], ['all', 'Documented side'], ['core', 'Strictly sourced']].map(([k, l]) => <button key={k} aria-pressed={variant === k} onClick={() => setVariant(k as 'all' | 'core' | 'inferred')}>{l}</button>)}
+        <div className="seg" title="Lobbied votes: every-vote links on bills that industry lobbied on, from lobbying filings. Every vote: any roll call where this industry's money lines up strongly with how members voted, taking the side its money pulls toward. Documented side: votes where the industry's position is known from scorecards or its own statements. Strictly sourced: only the industry's own statements.">
+          {[['lobbied', 'Lobbied votes'], ['inferred', 'Every vote since 2008'], ['all', 'Documented side'], ['core', 'Strictly sourced']].map(([k, l]) => <button key={k} aria-pressed={variant === k} onClick={() => setVariant(k as 'all' | 'core' | 'inferred' | 'lobbied')}>{l}</button>)}
         </div>
-        {variant === 'inferred' && <div className="coverage">Every-vote view: a vote counts for an industry when its money lines up strongly with how members voted, and the industry’s side is the side that money pulls toward. That side is inferred from the money pattern, not stated by the industry, so use this to find leads and check the case file.</div>}
+        {(variant === 'inferred' || variant === 'lobbied') && <div className="coverage">{variant === 'lobbied' ? 'Lobbied votes: only votes on bills this industry’s own lobbyists named in Senate filings (2008 to 2024; 2025 on not yet loaded). ' : ''}Every-vote view: a vote counts for an industry when its money lines up strongly with how members voted, and the industry’s side is the side that money pulls toward. That side is inferred from the money pattern, not stated by the industry, so use this to find leads and check the case file.</div>}
         {cov && <div className="coverage">This view: <strong>{cov.coded_votes}</strong> coded votes · <strong>{cov.ranked_members}</strong> members ranked · {cov.landmark_votes} landmark votes checked against district opinion.</div>}
       </div>
 
@@ -89,9 +89,9 @@ export default function Scoreboard({ onOpen, onMethod }: Props) {
         <OverHome rows={overHome} onOpen={onOpen} kind="direct" />
         <OverHome rows={overHomeProxy} onOpen={onOpen} kind="proxy" />
         <Highlights title="Most often with their donors" blurb="Highest share of money-backed votes cast the industry’s way, weighted by how much it had given."
-          rows={loyal} onOpen={onOpen} inferred={variant === 'inferred'} />
+          rows={loyal} onOpen={onOpen} inferred={variant === 'inferred' || variant === 'lobbied'} />
         <Highlights title="Took the money, voted the other way" blurb="Lowest share of money-backed votes cast the industry’s way. These members were funded by the industry and still went against it."
-          rows={resist} onOpen={onOpen} inferred={variant === 'inferred'} />
+          rows={resist} onOpen={onOpen} inferred={variant === 'inferred' || variant === 'lobbied'} />
       </div>
 
       <div className="card">
