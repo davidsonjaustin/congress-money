@@ -76,6 +76,15 @@ export default function MethodView({ defs }: { defs: Definitions }) {
           <li>It cannot show intent. Money that arrives after a vote predicts votes almost as well as money before it for most industries, so much of the link is donors backing members who already vote their way. Strong links also appear on votes with no obvious industry stake, so each is a lead, not a finding.</li>
         </ul>
 
+        <h3>8. Defense, local controls and what is still missing</h3>
+        <ul>
+          <li>Defense votes (147 since 2008) are of two kinds. 54 are passage, conference-report and veto-override votes on the defense authorization and appropriations bills, where the industry side is Yea. 93 (2013 to 2024) come from Peace Action’s votes archive: amendments that cut or add Pentagon money or weapons programs and resolutions to block arms sales, where the industry side is the opposite of Peace Action’s position, a fiscal rule written before any model ran. 93 of 99 selected pages matched a roll call by tally, bill, vote type and a comparison of the Yea voter lists.</li>
+          <li>Every test now holds fixed how much of the member’s state economy rests on the industry (Census employment, union membership, and for defense the DoD contract dollars per resident performed in the state). The every-vote results barely moved, so the links are not just jobs back home. State-level measures cannot separate districts within a state.</li>
+          <li>Two independent checks on the industry side of the coded votes: a strong money link pointed to the documented side in 177 of 182 cases, and the industry lobbied the bill in 80% of oil and gas votes and 83% of labor votes. Only 48% of coal rows passed the lobbying check, so scorecard-tier coal rows are kept only where coal clients lobbied the bill.</li>
+          <li>Contract totals are prime awards in obligated dollars. They leave out classified awards, subcontracts and direct sales to foreign governments, so “contracts ÷ revenue” is a floor. Company-reported government shares were read from search-result quotations of the filings and each carries a link to check.</li>
+          <li>Not covered: campaign promises (no data source yet), the executive branch (appointments, contract awards), Pentagon officials who later join contractors, and spending that goes to members through earmarks.</li>
+        </ul>
+
         <h3>How the tiers work</h3>
         <ul>
           <li>For each coded vote, find what chance a same-party colleague with the same ideology, district lean and local industry stake had of voting the industry’s way on that exact vote.</li>

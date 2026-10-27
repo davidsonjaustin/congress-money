@@ -7,7 +7,7 @@ pattern, not a statement by the industry, so these rows are tagged evidence_leve
 To keep a member from deciding their own score:
   * members are split into 5 folds within party; the pull direction used for a member's fold is estimated only from the other four folds;
   * the chance a member would have voted that way anyway comes from a model fitted on the other four folds that uses only ideology (by party),
-    party, district lean, district ideology and overall fundraising, never the industry's money.
+    party, district lean, district ideology, overall fundraising and the weight of the industry in the member's state economy, never the industry's money.
 A member counts as 'aligned' if they voted the way the money pulls. p_exp is the model's chance they would have anyway.
 
 Output (analysis.duckdb): inferred_alignment (same shape as donor_alignment's scoring columns), inferred_votes (the votes and pull direction used).
@@ -38,7 +38,7 @@ def main() -> None:
                              WHERE abs(t_only) >= {thr} AND label NOT IN {NOT_INDUSTRY}""").df()
     print(f"strong links: {len(strong):,} across {strong[['congress','chamber','rollnumber']].drop_duplicates().shape[0]:,} votes (|t| >= {thr:.2f})")
     mv = con.execute(f"""
-        SELECT v.congress, v.chamber, v.rollnumber, v.rc, r.vote_date AS vdate, v.bioguide, v.party, v.nominate_dim1 AS dim1, v.own_share, v.mrp_ideology AS mrp, v.yea
+        SELECT v.congress, v.chamber, v.rollnumber, v.rc, r.vote_date AS vdate, v.bioguide, v.party, v.state, v.nominate_dim1 AS dim1, v.own_share, v.mrp_ideology AS mrp, v.yea
         FROM member_vote v JOIN c.rollcalls r USING (congress, chamber, rollnumber)
         WHERE r.vote_date >= DATE '{a20.START}' AND v.yea IN (0, 1) AND v.party IN ('D', 'R')""").df()
     keys = strong[["congress", "chamber", "rollnumber"]].drop_duplicates()
@@ -49,6 +49,8 @@ def main() -> None:
     mv = mv.dropna(subset=["dim1", "own_share", "mrp"])
     sg = {k: g for k, g in strong.groupby(["congress", "chamber", "rollnumber"])}
     lg = lambda a: np.log1p(np.clip(a, 0, None) / 1000.0)
+    lzmap = a20.local_lookup(labels)
+    zero = np.zeros(len(labels))
     rng = np.random.default_rng(7)
     out = []
     for (cg, ch, rn), g in mv.groupby(["congress", "chamber", "rollnumber"], sort=False):
@@ -67,6 +69,8 @@ def main() -> None:
         for _, row in sg[(cg, ch, rn)].iterrows():
             j = lab_ix[row["label"]]
             x = lg(CM[ids, m, j] - CM[ids, m - a20.WINDOW, j])
+            lzj = np.array([lzmap.get((st_, int(g['vdate'].iloc[0].year)), zero)[j] for st_ in g['state']])
+            Cj = np.column_stack([C, lzj])                      # the industry's weight in the member's state is a legitimate reason to vote with it
             m6 = np.clip(CM[ids, m, j] - CM[ids, m - 72, j], 0, None)
             aligned = np.zeros(n)
             pexp = np.zeros(n)
@@ -75,10 +79,10 @@ def main() -> None:
                 tr, te = fold != f, fold == f
                 if te.sum() == 0:
                     continue
-                b0 = np.linalg.lstsq(C[tr], y[tr], rcond=None)[0]
-                bj = np.linalg.lstsq(np.column_stack([C[tr], x[tr]]), y[tr], rcond=None)[0][-1]
+                b0 = np.linalg.lstsq(Cj[tr], y[tr], rcond=None)[0]
+                bj = np.linalg.lstsq(np.column_stack([Cj[tr], x[tr]]), y[tr], rcond=None)[0][-1]
                 s = 1.0 if bj > 0 else -1.0
-                p0 = np.clip(C[te] @ b0, 0.02, 0.98)
+                p0 = np.clip(Cj[te] @ b0, 0.02, 0.98)
                 sign[te] = s
                 pexp[te] = np.where(s > 0, p0, 1 - p0)
                 aligned[te] = np.where(s > 0, y[te] == 1, y[te] == 0)

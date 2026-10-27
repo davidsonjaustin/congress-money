@@ -127,6 +127,7 @@ function Findings({ method, board, onMethod }: { method: MethodData; board: Scor
   const own = (g: string) => method.placebo.find((p) => p.vote_group === g && p.is_own)
   const bestOther = (g: string) => [...method.placebo.filter((p) => p.vote_group === g && !p.is_own)].sort((a, b) => b.effect_pts - a.effect_pts)[0]
   const lab = own('labor votes'), labO = bestOther('labor votes'), oil = own('oil and gas votes'), oilO = bestOther('oil and gas votes')
+  const mDef = money('defense'), vDef = votes('defense')
   const mOil = money('oil and gas'), mBank = money('banks'), mLab = money('labor'), vOil = votes('oil and gas'), vLab = votes('labor')
   return (
     <div className="findings">
@@ -151,6 +152,16 @@ function Findings({ method, board, onMethod }: { method: MethodData; board: Scor
           {oil && oilO ? `For oil and gas votes, ${oilO.money_from} money (${pts(oilO.effect_pts)}) predicts as well as oil’s own (${pts(oil.effect_pts)}).` : ''}
         </p>
       </div>
+      {mDef && vDef && (
+        <div className="fcard">
+          <div className="fh">Defense: the biggest contracts, a small share of the money</div>
+          <p>
+            Members who joined the Armed Services committees saw defense PAC money rise {pct(Math.exp(mDef.effect) - 1)}, yet their votes on defense measures did not shift ({pts(vDef.effect)} points).
+            The industry gives members millions a year against hundreds of billions in DoD contracts.{' '}
+            <button className="linkbtn" onClick={() => { location.hash = '#/defense' }}>See the Defense tab</button>
+          </p>
+        </div>
+      )}
       <div className="flink"><button className="linkbtn" onClick={onMethod}>How we tested this, and what it can’t show</button></div>
     </div>
   )

@@ -71,34 +71,50 @@ def resid(Q: np.ndarray, Z: np.ndarray) -> np.ndarray:
     return Z - Q @ (Q.T @ Z)
 
 
-def stats(y, ctrl, Xb, Xa):
-    """Per-label slopes of y on the money columns after partialling out ctrl. Xa may be None (before-only)."""
-    n = len(y)
+def batch_ols(D: np.ndarray, ry: np.ndarray, kc: int):
+    """OLS of ry on each label's regressors D[l] (n x k), with heteroskedasticity-robust (HC1-style) standard errors. Returns beta (L x k), t (L x k)."""
+    L, n, k = D.shape
+    G = np.einsum("lnk,lnm->lkm", D, D)
+    ok = G[:, 0, 0] > 1e-9
+    Gi = np.linalg.inv(G + 1e-9 * np.eye(k)[None])
+    beta = np.einsum("lkm,lm->lk", Gi, np.einsum("lnk,n->lk", D, ry))
+    e = ry[None, :] - np.einsum("lnk,lk->ln", D, beta)
+    meat = np.einsum("lnk,ln,lnm->lkm", D, e * e, D) * (n / max(n - kc - k, 1))
+    V = Gi @ meat @ Gi
+    se = np.sqrt(np.clip(np.einsum("lkk->lk", V), 0, None))
+    t = beta / se
+    beta[~ok], t[~ok] = np.nan, np.nan
+    return beta, t
+
+
+def stats(y, ctrl, Xb, Xa, Lz):
+    """Per-label slopes of y on the money columns after partialling out ctrl and the label's own local-industry stake (Lz, n x L)."""
     Q, _ = np.linalg.qr(ctrl)
     ry = y - Q @ (Q.T @ y)
-    Zb = resid(Q, Xb)
-    Gbb = (Zb ** 2).sum(0)
-    ok = Gbb > 1e-9
-    Gbb_s = np.where(ok, Gbb, np.nan)
-    b1 = (Zb.T @ ry) / Gbb_s
-    e1 = ry[:, None] - Zb * b1
-    se1 = np.sqrt(((e1 ** 2) * (Zb ** 2)).sum(0) * n / max(n - ctrl.shape[1] - 1, 1)) / Gbb_s
-    out = {"b_only": b1 * SCALE, "t_only": b1 / se1}
+    Zb, ZL = resid(Q, Xb), resid(Q, Lz)
+    kc = ctrl.shape[1]
+    b1, t1 = batch_ols(np.stack([Zb, ZL], axis=2).transpose(1, 0, 2), ry, kc)
+    out = {"b_only": b1[:, 0] * SCALE, "t_only": t1[:, 0]}
     if Xa is not None:
         Za = resid(Q, Xa)
-        Gaa, Gba = (Za ** 2).sum(0), (Zb * Za).sum(0)
-        det = Gbb * Gaa - Gba ** 2
-        det = np.where(np.abs(det) > 1e-9 * np.maximum(Gbb * Gaa, 1e-12), det, np.nan)
-        sb, sa = Zb.T @ ry, Za.T @ ry
-        bb = (Gaa * sb - Gba * sa) / det
-        ba = (Gbb * sa - Gba * sb) / det
-        e = ry[:, None] - Zb * bb - Za * ba
-        e2 = (e ** 2) * n / max(n - ctrl.shape[1] - 2, 1)
-        Mbb, Maa, Mba = (e2 * Zb ** 2).sum(0), (e2 * Za ** 2).sum(0), (e2 * Zb * Za).sum(0)
-        vb = (Gaa ** 2 * Mbb - 2 * Gaa * Gba * Mba + Gba ** 2 * Maa) / det ** 2
-        va = (Gba ** 2 * Mbb - 2 * Gba * Gbb * Mba + Gbb ** 2 * Maa) / det ** 2
-        out.update({"b_before": bb * SCALE, "t_before": bb / np.sqrt(vb), "b_after": ba * SCALE, "t_after": ba / np.sqrt(va)})
+        b2, t2 = batch_ols(np.stack([Zb, Za, ZL], axis=2).transpose(1, 0, 2), ry, kc)
+        out.update({"b_before": b2[:, 0] * SCALE, "t_before": t2[:, 0], "b_after": b2[:, 1] * SCALE, "t_after": t2[:, 1]})
     return out
+
+
+LOCAL_KEY = {"oil gas": "oil_gas", "coal mining": "coal_mining", "electric utilities": "electric_utilities", "banks": "banks", "pharma": "pharma",
+             "physicians clinicians": "physicians_clinicians", "insurance": "insurance", "Labor": "Labor", "Defense & Aerospace": "Defense contracts",
+             "Agribusiness & Food": "Agribusiness & Food", "Tech": "Tech", "Transportation": "Transportation", "Construction": "Construction", "Retail": "Retail"}
+
+
+def local_lookup(labels: list[str]) -> dict:
+    """(state, year) -> vector over labels of that industry's z-scored weight in the state's economy (0 when we have no measure)."""
+    ls = con.execute("SELECT state, year, subsector, z FROM local_stake").df()
+    piv = ls.pivot_table(index=["state", "year"], columns="subsector", values="z")
+    out = {}
+    for key, row in piv.iterrows():
+        out[key] = np.array([row.get(LOCAL_KEY.get(l, ""), 0.0) if LOCAL_KEY.get(l) else 0.0 for l in labels], dtype=float)
+    return {k: np.nan_to_num(v, nan=0.0) for k, v in out.items()}
 
 
 def run(shuffle: bool, seed: int = 0) -> pd.DataFrame:
@@ -106,7 +122,7 @@ def run(shuffle: bool, seed: int = 0) -> pd.DataFrame:
     mid, labels, M, TOT, last_full = build_money()
     CM, CT = cum(M), cum(TOT)
     mv = con.execute(f"""
-        SELECT v.congress, v.chamber, v.rollnumber, r.vote_date AS vdate, v.bioguide, v.party, v.nominate_dim1 AS dim1, v.own_share, v.mrp_ideology AS mrp, v.yea
+        SELECT v.congress, v.chamber, v.rollnumber, r.vote_date AS vdate, v.bioguide, v.party, v.state, v.nominate_dim1 AS dim1, v.own_share, v.mrp_ideology AS mrp, v.yea
         FROM member_vote v JOIN c.rollcalls r USING (congress, chamber, rollnumber)
         WHERE r.vote_date >= DATE '{START}' AND v.yea IN (0, 1) AND v.party IN ('D', 'R')""").df()
     mv["vdate"] = pd.to_datetime(mv["vdate"])
@@ -115,6 +131,8 @@ def run(shuffle: bool, seed: int = 0) -> pd.DataFrame:
     mv = mv.dropna(subset=["dim1", "own_share", "mrp"])
     rows = []
     L = len(labels)
+    lzmap = local_lookup(labels)
+    zero = np.zeros(L)
     for (cg, ch, rn), g in mv.groupby(["congress", "chamber", "rollnumber"], sort=False):
         y = g["yea"].to_numpy(dtype=float)
         n, ny = len(y), int(y.sum())
@@ -134,6 +152,7 @@ def run(shuffle: bool, seed: int = 0) -> pd.DataFrame:
         dim1 = g["dim1"].to_numpy()
         base = [np.ones(n), dim1, dim1 * d, d, g["own_share"].to_numpy(), g["mrp"].to_numpy()]
         lg = lambda a: np.log1p(np.clip(a, 0, None) / 1000.0)       # refunds can make a window's net total negative
+        Lz = np.array([lzmap.get((st_, int(g['vdate'].iloc[0].year)), zero) for st_ in g['state']])
         Xb = lg(before)
         ctrl_b = np.column_stack(base + [lg(tb)])
         if has_after:
@@ -150,8 +169,8 @@ def run(shuffle: bool, seed: int = 0) -> pd.DataFrame:
                 Xa = Xa[perm]
                 ctrl_j = ctrl_j.copy(); ctrl_j[:, 6] = ctrl_j[perm, 6]; ctrl_j[:, 7] = ctrl_j[perm, 7]
         try:
-            s1 = stats(y, ctrl_b, Xb, None)
-            sj = stats(y, ctrl_j, Xb, Xa) if has_after else {}
+            s1 = stats(y, ctrl_b, Xb, None, Lz)
+            sj = stats(y, ctrl_j, Xb, Xa, Lz) if has_after else {}
         except np.linalg.LinAlgError:
             continue
         df = pd.DataFrame({"label": labels, "b_only": s1["b_only"], "t_only": s1["t_only"]})

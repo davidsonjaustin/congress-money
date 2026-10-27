@@ -325,6 +325,11 @@ def leaderboard(sector: str, source: str = "pac_direct", chamber: str = "", cong
             GROUP BY ALL ORDER BY amount DESC LIMIT ?""", [sector, source, chamber, chamber, limit])
 
 
+# defense-industry endpoints live in their own module (imported here so the helpers above exist, and before the static mount so the mount does not shadow them)
+from server import defense_api  # noqa: E402
+
+app.include_router(defense_api.router)
+
 dist = ROOT / "web" / "dist"
 if dist.exists():
     app.mount("/", StaticFiles(directory=dist, html=True), name="web")

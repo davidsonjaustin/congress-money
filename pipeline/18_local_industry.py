@@ -25,7 +25,11 @@ RAW = ROOT / "data" / "raw" / "cbp"
 YEARS = range(2005, 2023)
 # NAICS prefixes -> the subsector they describe. 211 oil and gas extraction, 213 mining support (drilling services), 324 petroleum and coal
 # products (refining), 2121 coal mining, 2211 electric power, 5221 depository credit (banks), 3254 pharmaceuticals.
-GROUPS = {"oil_gas": ["211", "213"], "refining": ["324"], "coal_mining": ["2121"], "electric_utilities": ["2211"], "banks": ["5221"], "pharma": ["3254"]}
+GROUPS = {"oil_gas": ["211", "213"], "refining": ["324"], "coal_mining": ["2121"], "electric_utilities": ["2211"], "banks": ["5221"], "pharma": ["3254"],
+          # the other industries the every-vote screen tests (keys are the score labels, so sector-level labels keep their names)
+          "Defense & Aerospace": ["3364", "336992", "3366", "332993", "332994", "332995"],     # aerospace, armored vehicles, ships, ordnance
+          "Agribusiness & Food": ["311", "312", "115"], "Tech": ["5112", "5182", "334", "517", "5415"], "Transportation": ["481", "482", "484", "485", "488"],
+          "Construction": ["23"], "Retail": ["44", "45"], "insurance": ["524"], "physicians_clinicians": ["6211", "6212", "6213", "6214"]}
 FLAG_MID = {"A": 10, "B": 60, "C": 175, "E": 375, "F": 750, "G": 1750, "H": 3750, "I": 7500, "J": 17500, "K": 37500, "L": 75000, "M": 100000}
 
 
@@ -90,6 +94,23 @@ def main() -> None:
         r["state"], r["subsector"], r["year"] = st, sub, idx
         full.append(r.reset_index(drop=True))
     ls = pd.concat(full, ignore_index=True)[["state", "year", "subsector", "share", "z"]]
+    # Defense: what matters for a member's vote is also DoD contract dollars performed in the state, so add a second defense stake from USAspending
+    # (3-year average of DoD prime contract dollars per resident, logged and z-scored across states), keyed 'Defense contracts'
+    try:
+        us = duckdb.connect(str(ROOT / "data" / "usaspending.duckdb"), read_only=True)
+        dc = us.execute("SELECT fy AS year, state, amount / nullif(population, 0) AS pc FROM usa_state WHERE scope = 'dod' AND length(state) = 2 AND population > 0").df()
+        us.close()
+        dc = dc.sort_values(["state", "year"])
+        dc["share"] = dc.groupby("state")["pc"].transform(lambda x: x.rolling(3, min_periods=1).mean())
+        dc["z"] = dc.groupby("year")["share"].transform(lambda x: (np.log1p(x) - np.log1p(x).mean()) / np.log1p(x).std(ddof=0))
+        dfull = []
+        for st, g in dc.groupby("state"):
+            g = g.drop_duplicates("year").set_index("year").sort_index().reindex(range(2005, 2027), method="nearest")
+            g["state"], g["subsector"], g["year"] = st, "Defense contracts", range(2005, 2027)
+            dfull.append(g.reset_index(drop=True))
+        ls = pd.concat([ls] + [d[["state", "year", "subsector", "share", "z"]] for d in dfull], ignore_index=True)
+    except Exception as e:                      # the contracts file is built by 23_usaspending.py; without it the CBP-only stake is used
+        print("defense contract stake skipped:", e)
     con = duckdb.connect(str(ROOT / "data" / "analysis.duckdb"))
     con.execute("CREATE OR REPLACE TABLE state_industry AS SELECT * FROM si")
     con.execute("CREATE OR REPLACE TABLE state_union AS SELECT * FROM su")

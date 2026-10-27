@@ -74,7 +74,9 @@ def build() -> None:
            coalesce(ls.z, 0) AS local_z, ls.share AS local_share
     FROM mv JOIN m USING (rc, bioguide, sector, subsector) JOIN tot USING (rc, bioguide, sector, subsector)
     LEFT JOIN local_stake ls ON ls.state = mv.state AND ls.year = least(year(mv.vdate), 2026)
-         AND ls.subsector = CASE WHEN mv.sector = 'Labor' THEN 'Labor' WHEN mv.subsector <> '' THEN mv.subsector END""")
+         AND ls.subsector = CASE WHEN mv.sector = 'Labor' THEN 'Labor' WHEN mv.subsector <> '' THEN mv.subsector
+                                 WHEN mv.sector = 'Defense & Aerospace' THEN 'Defense contracts' WHEN mv.sector = 'Tech, Telecom & Media' THEN 'Tech'
+                                 WHEN mv.sector = 'Retail & Consumer' THEN 'Retail' ELSE mv.sector END""")
 
 
 def lpm_fe(df: pd.DataFrame, y: str, xs: list[str], fe: str, cluster: str):

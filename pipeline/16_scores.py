@@ -209,7 +209,7 @@ def timing() -> pd.DataFrame:
         ("Both, plus ideology, district lean and overall fundraising", ["lg_recent", "lg_after", "nominate_dim1", "own_share", "local_z", "lg_other"], ["fe"]),
         ("Both, same member compared with themselves over time", ["lg_recent", "lg_after"], ["fe", "bioguide"]),
     ]
-    groups = [("All coded votes", df), ("Banks", df[df["subsector"] == "banks"]), ("Oil and gas", df[df["subsector"] == "oil_gas"]), ("Labor (unions)", df[df["sector"] == "Labor"])]
+    groups = [("All coded votes", df), ("Banks", df[df["subsector"] == "banks"]), ("Oil and gas", df[df["subsector"] == "oil_gas"]), ("Labor (unions)", df[df["sector"] == "Labor"]), ("Defense", df[df["sector"] == "Defense & Aerospace"])]
     rows = []
     for group, sub in groups:
         for label, xs, fes in specs:

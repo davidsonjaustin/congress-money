@@ -1,0 +1,8 @@
+locked 2026-10-26T22:36:31-04:00 (version 2)
+VERSION 2 adds 54 fiscal-rule rows: every passage, conference-report, concurrence or veto-override vote on a defense authorization or defense appropriations bill since 2008 (industry side Yea; the Aerospace Industries Association publicly backs these bills), so that 2008-2012 and 2025-2026 are covered. Tier: fiscal. Peace Action rows (93) are unchanged from version 1.
+1facb9085c50c84d6dad784da9581fa180847abb2a63b448dc2e1dde7cc3fd27  vote_direction_defense.csv
+
+--- version 1 lock (superseded) ---
+locked 2026-10-26T22:03:38-04:00 (version 1)
+Defense and aerospace vote directions from Peace Action scorecard positions (peaceaction.org/votes), House and Senate, 113th-118th Congress. Only votes about Pentagon money, weapons programs and arms sales are kept (NDAA and defense appropriations passage, spending and weapons amendments, resolutions to block arms sales). Industry side = opposite of Peace Action position (In Favor of cutting/blocking -> Nay; Opposed -> Yea), a fiscal-effect rule. Tier: scorecard. 93 of 99 selected pages matched to roll calls by tally/bill/vote type and Yea-voter list overlap (Jaccard >= 0.85). Unmatched pages are listed in data/raw/positions/unmatched_defense.csv and unused.
+4ca9a333a770547e78dc65ea10169861e1c2fc99193349786d3ed9b324aa9217  vote_direction_defense.csv

@@ -64,3 +64,30 @@ export type TopVotes = { rows: TopVote[]; total: number }
 export type InferredLine = { label: string; votes_coded: number; weight: number; n_funded: number; n_funded_aligned: number; expected: number; lift: number; se: number | null; z: number | null; money: number }
 export type InferredVote = { d: string | null; congress: number; chamber: string; rollnumber: number; label: string; aligned: number; p_exp: number; pac_6y: number; pull_yea: number; t_only: number; bill: string | null; q: string | null; descr: string | null; result: string | null }
 export type MemberInferred = { summary: InferredLine[]; with_money: InferredVote[]; against_money: InferredVote[] }
+export type DefFy = { fy: number; scope: 'dod' | 'all'; amount: number }
+export type DefCompanyYear = { company: string; kind: string; year: number; contracts_dod: number | null; contracts_all: number | null; revenue: number | null; lobbying: number | null; pac: number | null; indiv: number | null }
+export type DefTracked = { year: number; dod: number | null; allc: number | null; lobbying: number | null; pac: number | null; indiv: number | null }
+export type DefReported = { company: string; year: number; share: number; basis: string; source_url: string; how_obtained: string }
+export type DefOverview = { fy: DefFy[]; companies: DefCompanyYear[]; tracked: DefTracked[]; member_money: { y: number; source: string; amount: number }[]; reported: DefReported[] }
+export type DefState = { state: string; dod: number; pop: number; per_capita: number }
+export type DefMember = {
+  bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; chamber: string; last_congress: number; n: number; aligned: number; p_exp: number | null
+  pac_all: number | null; pac_6y: number | null; ind_all: number | null; state_pc: number | null; district_dod: number | null; district_pc: number | null
+}
+export type DefRevolving = {
+  per_company: { company: string; lobbyists: number; with_position: number; congress_roles: number; executive_roles: number }[]
+  spend: { company: string; firms: number; filings: number; spend: number | null }[]
+  by_year: { year: number; lobbyists: number; with_position: number; congress_roles: number }[]
+  common_positions: { position: string; people: number }[]
+  entities: { entity: string; filings: number }[]
+  door_facts: { date: string; text: string; source_name: string; source_url: string }[]
+}
+export type WarVote = { congress: number; chamber: string; rollnumber: number; d: string; bill: string; q: string; descr: string; yeas: number; nays: number; result: string }
+export type WarMember = { id: string; name: string; party: 'D' | 'R'; state: string; chamber: string; n: number; constrain: number; pac_6y: number }
+export type WarData = { votes: WarVote[]; by_party: { chamber: string; party: 'D' | 'R'; members: number; share: number }[]; members: WarMember[]; association: { party: string; chamber: string; members: number; corr: number }[] }
+export type PromiseItem = {
+  bioguide: string; name: string; date: string; topic: string; statement: string; source_name: string; source_url: string
+  record: { war: { n: number; constrain: number; n119: number; constrain119: number } | null; defense: { n: number; aligned: number } | null; pac_all: number | null; member: { name: string; party: string; state: string; last_congress: number } | null }
+}
+export type ExecItem = { date: string; kind: 'said' | 'did'; text: string; source_name: string; source_url: string }
+export type PromisesData = { items: PromiseItem[]; executive: ExecItem[] }

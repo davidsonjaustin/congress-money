@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 import { api } from '../api'
-import type { Constituent, Definitions, DonorVote, InferredVote, MemberInferred, Profile, Scored, SectorLine } from '../types'
+import type { Constituent, DefMember, DefState, Definitions, DonorVote, InferredVote, MemberInferred, Profile, Scored, SectorLine } from '../types'
 import { useWidth } from '../hooks'
 import { fmtLift, fmtMoney, liftRange, ordinal } from '../util'
 import { ConstituentsCard, DonorVotesCard } from './MemberView'
@@ -22,8 +22,15 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
   const [cons, setCons] = useState<Constituent[]>([])
   const [sel, setSel] = useState('')
   const [inf, setInf] = useState<MemberInferred | null>(null)
+  const [dm, setDm] = useState<DefMember | null>(null)
+  const [dStates, setDStates] = useState<DefState[]>([])
 
   useEffect(() => { setInf(null); api.inferred(id).then(setInf).catch(() => undefined) }, [id])
+  useEffect(() => {
+    setDm(null)
+    api.defMembers().then((r) => setDm(r.find((m) => m.bioguide === id) ?? null)).catch(() => undefined)
+    api.defStates().then(setDStates).catch(() => undefined)
+  }, [id])
 
   useEffect(() => {
     let alive = true
@@ -113,6 +120,7 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
       </div>
 
       {inf && inf.summary.length > 0 && <EveryVoteCard inf={inf} name={profile.name} />}
+      {dm && ((dm.pac_all ?? 0) >= 25000 || dm.n >= 5) && <DefenseCard m={dm} states={dStates} />}
 
       {donors.length > 0 && (
         <div className="card">
@@ -292,6 +300,22 @@ function EveryVoteCard({ inf, name }: { inf: MemberInferred; name: string }) {
         {list('Voted with the money against their profile', 'Industry gave $25K or more, and ideology and district made this vote unlikely.', inf.with_money)}
         {list('Voted against the money despite it', 'Industry gave $25K or more, and ideology and district made voting with it likely.', inf.against_money)}
       </div>
+    </div>
+  )
+}
+
+function DefenseCard({ m, states }: { m: DefMember; states: DefState[] }) {
+  const rank = m.state_pc != null ? states.filter((s) => s.pop > 0 && s.per_capita > m.state_pc!).length + 1 : null
+  return (
+    <div className="card">
+      <h2>Defense: money, votes and contracts at home</h2>
+      <ul className="facts">
+        <li>Defense industry PAC gifts over their career in our data: <strong>{m.pac_all ? fmtMoney(m.pac_all) : '$0'}</strong>{m.ind_all ? `; itemized gifts from defense-company employees: ${fmtMoney(m.ind_all)}` : ''}.</li>
+        {m.n > 0 && <li>Voted the industry’s side on <strong>{m.aligned} of {m.n}</strong> documented defense votes (NDAA and defense appropriations passage since 2008, plus Pentagon and weapons spending amendments and arms-sale resolutions, 2013 to 2024).</li>}
+        {m.state_pc != null && <li>DoD contract dollars performed in {m.state}: <strong>${Math.round(m.state_pc).toLocaleString()}</strong> per resident per year{rank ? `, ${rank}${rank % 10 === 1 && rank !== 11 ? 'st' : rank % 10 === 2 && rank !== 12 ? 'nd' : rank % 10 === 3 && rank !== 13 ? 'rd' : 'th'} highest among states and DC` : ''}.</li>}
+        {m.district_dod != null && <li>In their House district: <strong>{fmtMoney(m.district_dod)}</strong> a year in DoD prime contracts (approximate district boundaries).</li>}
+      </ul>
+      <div className="hint">Contracts at home are a local reason to back defense spending that is separate from donations. The defense page shows how votes, money and local contracts line up across members.</div>
     </div>
   )
 }

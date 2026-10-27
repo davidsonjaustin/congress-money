@@ -36,6 +36,13 @@ own districts said, and tests whether money arrives before or after the votes.
 | 18 local industry | state industry employment (Census CBP) and union density (CES) as local-stake controls |
 | 19 robustness | placebo-industry and committee-join difference-in-differences tests |
 | 20 all votes money | tests every roll call since 2008 against every industry's PAC money, direction-free, with before/after and shuffled-money checks |
+| 21 inferred alignment | member-level rows on votes where an industry's money lines up strongly with the vote (direction and expectation cross-fitted across member folds) |
+| 22 lobbied votes | which industries lobbied each bill (Senate LDA filings 2008 to 2026) |
+| 23 usaspending | federal prime contracts by recipient, state and district, FY2008 to FY2025 (public API) -> data/usaspending.duckdb |
+| 24 company dependence | per defense company and year: contracts, SEC revenue, lobbying, PAC and employee gifts |
+| 25 defense votes | defense vote directions: Peace Action scorecard (inverted on a fiscal rule) plus every NDAA / defense appropriations passage vote since 2008 |
+| 26 revolving door | defense companies' lobbyists and the government positions they report (LDA API) |
+| 27 war powers | every vote on a resolution directing removal of US forces from hostilities since 2008 |
 
 ## Locked definitions (`pipeline/definitions/`)
 Which bills touch which sector, and **which way each vote helps each industry**, are written down and hashed (`LOCK*.txt`) *before* any model
@@ -46,6 +53,13 @@ sees the money. Do not edit a locked file; add a new version and report both. Ev
 Voteview, FEC bulk files, Senate LDA, GovInfo BILLSTATUS, unitedstates/congress-legislators, Stewart & Woon committee data, American Ideology Project,
 Cooperative Election Study (cumulative + policy preferences + 2010 roll-call battery), LCV and AFL-CIO scorecard pages. Source URLs for each coded
 vote are in the `source_url` column of the `vote_direction*.csv` files.
+
+## Defense and contracts
+The Defense tab answers a different question from the scoreboard: how dependent the industry is on federal contracts, what it spends on Washington, where the contract
+dollars land, how members vote next to local contracts and money, who lobbies for the companies, and what members said next to what they did. Contract totals are PRIME
+awards in obligated dollars (they omit classified awards, subcontracts and direct foreign sales); company-reported government shares are in
+`pipeline/definitions/company_reported_share.csv` with source links, and were read from search-result quotations of the filings, so check each source.
+Statements for the said-versus-did table are in `promises.csv`, executive-branch statements and actions in `executive_record.csv`, Pentagon-to-contractor facts in `door_facts.csv`.
 
 ## Known limits
 Only ~300 of ~18,000 roll calls since 2008 have a documented industry side (mostly oil, gas, coal and labor); the every-vote screen (step 20) covers the rest

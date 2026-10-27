@@ -71,8 +71,9 @@ def placebo() -> pd.DataFrame:
     df[lg_cols] = df[lg_cols].fillna(0.0)
     scale = float(np.log1p(50.0)) * 100
     rows = []
-    groups = {"oil and gas votes": df[df["subsector"] == "oil_gas"], "bank votes": df[df["subsector"] == "banks"], "labor votes": df[df["sector"] == "Labor"]}
-    own = {"oil and gas votes": "lg_oil gas", "bank votes": "lg_banks", "labor votes": "lg_Labor"}
+    groups = {"oil and gas votes": df[df["subsector"] == "oil_gas"], "bank votes": df[df["subsector"] == "banks"], "labor votes": df[df["sector"] == "Labor"],
+              "defense votes": df[df["sector"] == "Defense & Aerospace"]}
+    own = {"oil and gas votes": "lg_oil gas", "bank votes": "lg_banks", "labor votes": "lg_Labor", "defense votes": "lg_Defense & Aerospace"}
     for name, sub in groups.items():
         xs = lg_cols + ["nominate_dim1", "own_share", "local_z"]
         b, se, n = _s16.lpm(sub, xs, ["fe"])
@@ -88,7 +89,7 @@ def committee_did() -> pd.DataFrame:
     ca["start_date"] = pd.to_datetime(ca["start_date"])
     cs = pd.read_csv(ROOT / "pipeline" / "definitions" / "committee_sector.csv")
     cs = cs[cs["tier"] == "strict"]
-    target = {"oil and gas": ("Energy & Natural Resources", "oil_gas"), "banks": ("Finance, Insurance & Real Estate", "banks"), "labor": ("Labor", "")}
+    target = {"oil and gas": ("Energy & Natural Resources", "oil_gas"), "banks": ("Finance, Insurance & Real Estate", "banks"), "labor": ("Labor", ""), "defense": ("Defense & Aerospace", "")}
     w = weekly_by_label()
     w["year"] = w["week"].dt.year
     alg = con.execute("SELECT bioguide, vdate, sector, subsector, aligned, p_exp FROM donor_alignment_scored").df()
@@ -104,7 +105,7 @@ def committee_did() -> pd.DataFrame:
         # only people who were NOT already on such a committee when our data starts (a clean 'before')
         early = set(joins[joins <= pd.Timestamp("2005-07-01")].index)          # already on such a committee when the data starts: no 'before'
         joins = joins[joins > pd.Timestamp("2005-07-01")]
-        label = {"oil and gas": "oil gas", "banks": "banks", "labor": "Labor"}[name]
+        label = {"oil and gas": "oil gas", "banks": "banks", "labor": "Labor", "defense": "Defense & Aerospace"}[name]
         money = w[w["label"] == label].groupby(["bioguide", "year"])["amount"].sum().rename("money").reset_index()
         sel = alg[(alg["sector"] == sector) & (alg["subsector"] == sub)].groupby(["bioguide", "year"])["resid"].mean().rename("resid").reset_index()
         members = sorted((set(sel["bioguide"]) | set(money["bioguide"])) - early)
