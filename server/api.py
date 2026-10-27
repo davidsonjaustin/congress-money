@@ -54,6 +54,26 @@ def _connection():
     return _base
 
 
+_attached: dict[str, bool] = {}
+
+
+def attach_once(alias: str, fname: str, required: bool = True) -> bool:
+    """Attach data/<fname> read-only as <alias> the first time it is needed. Returns False (or raises 503 if required) when the file has not been built."""
+    if _attached.get(alias):
+        return True
+    con = _connection()
+    with _base_lock:
+        if not _attached.get(alias):
+            path = DATA / fname
+            if not path.exists():
+                if required:
+                    raise HTTPException(503, f"{fname} not built")
+                return False
+            con.execute(f"ATTACH '{path.as_posix()}' AS {alias} (READ_ONLY)")
+            _attached[alias] = True
+    return True
+
+
 @contextmanager
 def db():
     cur = _connection().cursor()      # a cursor per request is safe to use from worker threads
@@ -243,6 +263,18 @@ def freshness():
     ]}
 
 
+@app.get("/api/moneycoverage")
+def money_coverage():
+    """For each kind of money, how much could be put in an industry, how much is political committees, how much has no usable employer, how much is unrecognised."""
+    with db() as con:
+        return rows(con, """
+            SELECT source, CASE WHEN sector = 'Not identifiable (retired / unemployed / no employer)' THEN 'no_employer'
+                                WHEN sector IN ('Other / unclassified', 'Unclassified', 'Business (sector not yet assigned)', 'Ideological / Single-Issue / Unsorted') THEN 'unsorted'
+                                WHEN sector IN ('Candidate committee', 'Leadership PAC', 'Party committee', 'Joint fundraising', 'Caucus & Party-Aligned PACs', 'Conduit (excluded)') THEN 'committees'
+                                ELSE 'sorted' END AS grp, sum(amount) AS amount
+            FROM money_weekly WHERE week <= current_date GROUP BY 1, 2 ORDER BY 1, 2""")
+
+
 @app.get("/api/method")
 def method():
     with db() as con:
@@ -391,10 +423,11 @@ def leaderboard(sector: str, source: str = "pac_direct", chamber: str = "", cong
 
 
 # defense-industry endpoints live in their own module (imported here so the helpers above exist, and before the static mount so the mount does not shadow them)
-from server import defense_api, lobbying_api  # noqa: E402
+from server import companies_api, defense_api, lobbying_api  # noqa: E402
 
 app.include_router(defense_api.router)
 app.include_router(lobbying_api.router)
+app.include_router(companies_api.router)
 
 dist = ROOT / "web" / "dist"
 if dist.exists():

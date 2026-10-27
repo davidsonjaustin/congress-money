@@ -1,148 +1,148 @@
-company,sector,regex,pac_regex,employer_regex,recipient_regex,note
-Comcast / NBCUniversal,Tech,COMCAST|NBCUNIVERSAL,,,,
-AT&T,Tech,\bAT&T\b|\bATT\b|BELLSOUTH|SBC COMMUNICATIONS,AT&T|\bATT\b|BELLSOUTH,AT&T|\bATT\b|BELLSOUTH,AT&T,
-Verizon,Tech,VERIZON,,,,
-Alphabet (Google),Tech,GOOGLE|ALPHABET INC,,,,
-Meta (Facebook),Tech,META PLATFORMS|FACEBOOK,,,,
-Microsoft,Tech,MICROSOFT,,,,
-Amazon,Tech,AMAZON,,,,
-Apple,Tech,\bAPPLE INC|\bAPPLE COMPUTER,,,,
-Oracle,Tech,ORACLE,,,,
-Qualcomm,Tech,QUALCOMM,,,,
-T-Mobile / Sprint,Tech,T-?MOBILE|\bSPRINT\b,,,,
-Charter / Time Warner Cable,Tech,CHARTER COMMUNICATIONS|TIME WARNER CABLE,,,,
-Intel,Tech,\bINTEL CORP,,,,
-IBM,Tech,INTERNATIONAL BUSINESS MACHINES|\bIBM\b,,,,
-Cisco,Tech,CISCO SYSTEMS,,,,
-Dell,Tech,DELL TECHNOLOGIES|\bDELL INC,,,,
-HP / Hewlett-Packard,Tech,\bHP INC|HEWLETT.?PACKARD,,,,
-Disney,Tech,DISNEY,,,,
-Pfizer,Health,PFIZER,,,,
-Merck,Health,\bMERCK\b,,,,
-Johnson & Johnson,Health,JOHNSON & JOHNSON|JOHNSON AND JOHNSON,,,,
-Eli Lilly,Health,ELI LILLY,,,,
-AbbVie,Health,ABBVIE,,,,
-Amgen,Health,\bAMGEN,,,,
-Bristol-Myers Squibb,Health,BRISTOL.?MYERS,,,,
-Gilead,Health,GILEAD,,,,
-Novartis,Health,NOVARTIS,,,,
-Sanofi,Health,SANOFI,,,,
-GSK,Health,\bGSK\b|GLAXO,,,,
-AstraZeneca,Health,ASTRAZENECA,,,,
-Genentech / Roche,Health,GENENTECH|HOFFMANN.LA ROCHE|\bROCHE\b,,,,
-Novo Nordisk,Health,NOVO NORDISK,,,,
-Takeda,Health,TAKEDA,,,,
-Biogen,Health,\bBIOGEN,,,,
-Teva,Health,\bTEVA\b,,,,
-Abbott,Health,ABBOTT LAB|\bABBOTT\b,,,,
-Medtronic,Health,MEDTRONIC,,,,
-UnitedHealth / Optum,Health,UNITEDHEALTH|\bOPTUM\b,,,OPTUM,
-CVS Health,Health,\bCVS\b|CAREMARK,,,\bCVS\b|CAREMARK,
-Elevance / Anthem,Health,ELEVANCE|\bANTHEM\b|WELLPOINT,,,,
-Cigna / Express Scripts,Health,\bCIGNA\b|EXPRESS SCRIPTS,,,,
-Humana,Health,HUMANA,,,HUMANA,
-Centene,Health,CENTENE,,,,
-HCA Healthcare,Health,\bHCA\b|HOSPITAL CORPORATION OF AMERICA,,,,
-DaVita,Health,DAVITA,,,,
-McKesson,Health,MCKESSON,,,MCKESSON,
-AmerisourceBergen / Cencora,Health,AMERISOURCEBERGEN|CENCORA,,,AMERISOURCEBERGEN|CENCORA,
-Cardinal Health,Health,CARDINAL HEALTH,,,,
-Walgreens,Health,WALGREEN,,,,
-ExxonMobil,Energy,EXXON,,,,
-Chevron,Energy,CHEVRON,,,,
-ConocoPhillips,Energy,CONOCOPHILLIPS,,,,
-Shell,Energy,\bSHELL (OIL|USA|ENERGY|US)|SHELL USA,SHELL OIL|SHELL USA|\bSHELL\b,SHELL OIL|SHELL USA|\bSHELL\b,,
-BP,Energy,\bBP AMERICA|\bBP\b,\bBP\b|BRITISH PETROLEUM,\bBP\b|BRITISH PETROLEUM,,
-Occidental Petroleum,Energy,OCCIDENTAL PETROLEUM,,,,
-Marathon Petroleum,Energy,MARATHON PETROLEUM,,,,
-Phillips 66,Energy,PHILLIPS 66,,,,
-Valero,Energy,VALERO,,,,
-Koch Industries,Energy,KOCH,KOCH,KOCH INDUSTRIES|KOCH,,
-Southern Company,Energy,SOUTHERN COMPANY,,,,
-Duke Energy,Energy,DUKE ENERGY,,,,
-NextEra Energy,Energy,NEXTERA|FLORIDA POWER & LIGHT|\bFPL\b,,,,
-American Electric Power,Energy,AMERICAN ELECTRIC POWER|\bAEP\b,,,,
-Exelon,Energy,EXELON,,,,
-Edison International,Energy,EDISON INTERNATIONAL|SOUTHERN CALIFORNIA EDISON,,,,
-PG&E,Energy,PACIFIC GAS|\bPG&E\b,,,,
-Entergy,Energy,ENTERGY,,,,
-Dominion Energy,Energy,DOMINION (ENERGY|RESOURCES)|\bDOMINION\b,,,,
-Peabody Energy,Energy,PEABODY,,,,
-Dow / DuPont,Energy,DOW CHEMICAL|\bDOW INC|DUPONT,,,,
-JPMorgan Chase,Finance,JPMORGAN|J\.?P\.? MORGAN|BANK ONE,,,,
-Bank of America,Finance,BANK OF AMERICA|MERRILL,,,,
-Wells Fargo,Finance,WELLS FARGO,,,,
-Citigroup,Finance,CITIGROUP|CITIBANK|CITICORP,,,,
-Goldman Sachs,Finance,GOLDMAN SACHS,,,,
-Morgan Stanley,Finance,MORGAN STANLEY,,,,
-Capital One,Finance,CAPITAL ONE,,,,
-Visa,Finance,\bVISA (INC|U)|VISA INTERNATIONAL,,,,
-Mastercard,Finance,MASTERCARD,,,,
-American Express,Finance,AMERICAN EXPRESS,,,,
-MetLife,Finance,METLIFE,,,,
-Prudential Financial,Finance,PRUDENTIAL FINANCIAL,,,,
-AIG,Finance,AMERICAN INTERNATIONAL GROUP|\bAIG\b,,,,
-Allstate,Finance,ALLSTATE,,,,
-Travelers,Finance,TRAVELERS,,,,
-State Farm,Finance,STATE FARM,,,,
-Berkshire Hathaway,Finance,BERKSHIRE HATHAWAY,,,,
-BlackRock,Finance,BLACKROCK,,,,
-Fidelity (FMR),Finance,\bFMR\b|FIDELITY INVESTMENTS,,,,
-Vanguard,Finance,VANGUARD GROUP,,,,
-Aflac,Finance,AFLAC,,,,
-New York Life,Finance,NEW YORK LIFE,,,,
-Northwestern Mutual,Finance,NORTHWESTERN MUTUAL,,,,
-MassMutual,Finance,MASSACHUSETTS MUTUAL|MASSMUTUAL|MASS MUTUAL,,,,
-Nationwide,Finance,NATIONWIDE (MUTUAL|INSURANCE|FINANCIAL),,,,
-Liberty Mutual,Finance,LIBERTY MUTUAL,,,,
-USAA,Finance,UNITED SERVICES AUTOMOBILE|\bUSAA\b,,,,
-Chubb,Finance,CHUBB,,,,
-Blackstone,Finance,BLACKSTONE,,,,
-Carlyle,Finance,CARLYLE GROUP,,,,
-Apollo,Finance,APOLLO (GLOBAL|MANAGEMENT),,,,
-Coinbase,Finance,COINBASE,,,,
-FedEx,Transportation,FEDEX|FEDERAL EXPRESS,,,,
-UPS,Transportation,UNITED PARCEL SERVICE|\bUPS\b,,,,
-Delta Air Lines,Transportation,DELTA AIR LINES,,,,
-American Airlines,Transportation,AMERICAN AIRLINES,,,,
-United Airlines,Transportation,UNITED AIRLINES|CONTINENTAL AIRLINES,,,,
-Southwest Airlines,Transportation,SOUTHWEST AIRLINES,,,,
-Union Pacific,Transportation,UNION PACIFIC,,,,
-BNSF,Transportation,BNSF|BURLINGTON NORTHERN,,,,
-CSX,Transportation,\bCSX\b,,,,
-Norfolk Southern,Transportation,NORFOLK SOUTHERN,,,,
-General Motors,Transportation,GENERAL MOTORS|\bGM\b,,,,
-Ford Motor,Transportation,FORD MOTOR,,,,
-Toyota,Transportation,TOYOTA,,,,
-Stellantis / Chrysler,Transportation,STELLANTIS|\bFCA US|CHRYSLER,,,,
-Honda,Transportation,AMERICAN HONDA|HONDA NORTH AMERICA,,,,
-Tesla,Transportation,TESLA,,,,
-Uber,Transportation,\bUBER\b,,,,
-Altria / Philip Morris,Agribusiness,ALTRIA|PHILIP MORRIS|PMI US,,,,
-PepsiCo,Agribusiness,PEPSICO,,,,
-Coca-Cola,Agribusiness,COCA.?COLA,,,,
-Bayer / Monsanto,Agribusiness,BAYER|MONSANTO,,,,
-Corteva,Agribusiness,CORTEVA,,,,
-Archer Daniels Midland,Agribusiness,ARCHER.?DANIELS,,,,
-Tyson Foods,Agribusiness,TYSON,,,,
-Cargill,Agribusiness,CARGILL,,,,
-Kraft Heinz,Agribusiness,KRAFT HEINZ|KRAFT FOODS,,,,
-Anheuser-Busch,Agribusiness,ANHEUSER.?BUSCH,,,,
-Molson Coors,Agribusiness,MOLSON COORS,,,,
-JBS,Agribusiness,\bJBS\b,,,,
-Walmart,Retail,WAL.?MART|WALMART,,,,
-Target,Retail,\bTARGET (CORP|STORES)|TARGET CORPORATION,,,,
-Home Depot,Retail,HOME DEPOT,,,,
-Lowe's,Retail,LOWE.?S COMPAN,,,,
-Kroger,Retail,KROGER,,,,
-Costco,Retail,COSTCO,,,,
-Nike,Retail,\bNIKE\b,,,,
-Procter & Gamble,Retail,PROCTER (&|AND) GAMBLE,,,,
-Caterpillar,Manufacturing,CATERPILLAR,,,,
-Deere,Manufacturing,DEERE (&|AND) CO,,,,
-3M,Manufacturing,\b3M\b,,,,
-Bechtel,Construction,BECHTEL,,,,
-AECOM,Construction,AECOM,,,,
-Jacobs,Construction,JACOBS (ENGINEERING|SOLUTIONS)|\bJACOBS\b,,,,
-Nucor,Manufacturing,NUCOR,,,,
-U.S. Steel,Manufacturing,UNITED STATES STEEL|U\.?S\.? STEEL,,,,
+company,sector,regex,pac_regex,employer_regex,recipient_regex,note,search
+Comcast / NBCUniversal,Tech,COMCAST|NBCUNIVERSAL,,,,,comcast|nbcuniversal
+AT&T,Tech,\bAT&T\b|\bATT\b|BELLSOUTH|SBC COMMUNICATIONS,AT&T|\bATT\b|BELLSOUTH,AT&T|\bATT\b|BELLSOUTH,AT&T,,at&t|bellsouth
+Verizon,Tech,VERIZON,,,,,verizon
+Alphabet (Google),Tech,GOOGLE|ALPHABET INC,,,,,google|alphabet inc
+Meta (Facebook),Tech,META PLATFORMS|FACEBOOK,,,,,meta platforms|facebook
+Microsoft,Tech,MICROSOFT,,,,,microsoft
+Amazon,Tech,AMAZON,,,,,amazon
+Apple,Tech,\bAPPLE INC|\bAPPLE COMPUTER,,^APPLE( INC| COMPUTER),,,apple inc
+Oracle,Tech,ORACLE,,,,,oracle
+Qualcomm,Tech,QUALCOMM,,,,,qualcomm
+T-Mobile / Sprint,Tech,T-?MOBILE|\bSPRINT\b,,,,,t-mobile|sprint
+Charter / Time Warner Cable,Tech,CHARTER COMMUNICATIONS|TIME WARNER CABLE,,,,,charter communications|time warner cable
+Intel,Tech,\bINTEL CORP,,,,,intel corp
+IBM,Tech,INTERNATIONAL BUSINESS MACHINES|\bIBM\b,,,,,international business machines|ibm
+Cisco,Tech,CISCO SYSTEMS,,,,,cisco systems
+Dell,Tech,DELL TECHNOLOGIES|\bDELL INC,,,,,dell technologies|dell inc
+HP / Hewlett-Packard,Tech,\bHP INC|HEWLETT.?PACKARD,,,,,hp inc|hewlett packard
+Disney,Tech,DISNEY,,,,,disney
+Pfizer,Health,PFIZER,,,,,pfizer
+Merck,Health,\bMERCK\b,,,,,merck
+Johnson & Johnson,Health,JOHNSON & JOHNSON|JOHNSON AND JOHNSON,,,,,johnson & johnson|johnson and johnson
+Eli Lilly,Health,ELI LILLY,,,,,eli lilly
+AbbVie,Health,ABBVIE,,,,,abbvie
+Amgen,Health,\bAMGEN,,,,,amgen
+Bristol-Myers Squibb,Health,BRISTOL.?MYERS,,,,,bristol myers
+Gilead,Health,GILEAD,,,,,gilead
+Novartis,Health,NOVARTIS,,,,,novartis
+Sanofi,Health,SANOFI,,,,,sanofi
+GSK,Health,\bGSK\b|GLAXO,GLAXO|\bGSK\b,,,,gsk|glaxo
+AstraZeneca,Health,ASTRAZENECA,,,,,astrazeneca
+Genentech / Roche,Health,GENENTECH|HOFFMANN.LA ROCHE|\bROCHE\b,,,,,genentech|hoffmann.la roche|roche
+Novo Nordisk,Health,NOVO NORDISK,,,,,novo nordisk
+Takeda,Health,TAKEDA,,,,,takeda
+Biogen,Health,\bBIOGEN,,,,,biogen
+Teva,Health,\bTEVA\b,,,,,teva pharm
+Abbott,Health,ABBOTT LAB|\bABBOTT\b,ABBOTT LAB|ABBOTT EMPLOYEE,^ABBOTT (LAB|LABS|LABORATORIES|LABORTORIES|NUTRITION|VASCULAR),,,abbott lab|abbott
+Medtronic,Health,MEDTRONIC,,,,,medtronic
+UnitedHealth / Optum,Health,UNITEDHEALTH|\bOPTUM\b,,,OPTUM,,unitedhealth|optum
+CVS Health,Health,\bCVS\b|CAREMARK,,,\bCVS\b|CAREMARK,,cvs|caremark
+Elevance / Anthem,Health,ELEVANCE|\bANTHEM\b|WELLPOINT,,,,,elevance|anthem|wellpoint
+Cigna / Express Scripts,Health,\bCIGNA\b|EXPRESS SCRIPTS,,,,,cigna|express scripts
+Humana,Health,HUMANA,,,HUMANA,,humana
+Centene,Health,CENTENE,,,,,centene
+HCA Healthcare,Health,\bHCA\b|HOSPITAL CORPORATION OF AMERICA,,,,,hca|hospital corporation of america
+DaVita,Health,DAVITA,,,,,davita
+McKesson,Health,MCKESSON,,,MCKESSON,,mckesson
+AmerisourceBergen / Cencora,Health,AMERISOURCEBERGEN|CENCORA,,,AMERISOURCEBERGEN|CENCORA,,amerisourcebergen|cencora
+Cardinal Health,Health,CARDINAL HEALTH,,,,,cardinal health
+Walgreens,Health,WALGREEN,,,,,walgreen
+ExxonMobil,Energy,EXXON,,,,,exxon
+Chevron,Energy,CHEVRON,,,,,chevron
+ConocoPhillips,Energy,CONOCOPHILLIPS,,,,,conocophillips
+Shell,Energy,\bSHELL (OIL|USA|ENERGY|US)|SHELL USA,SHELL OIL|SHELL USA|\bSHELL\b,^SHELL( OIL| USA| ENERGY| TRADING| LUBRICANTS| EXPLORATION|$),,,shell oil|shell usa
+BP,Energy,\bBP AMERICA|\bBP\b,\bBP\b|BRITISH PETROLEUM,^BP$|^BP (AMERICA|ENERGY|P\.?L\.?C|CORP)|BRITISH PETROLEUM,,,bp america
+Occidental Petroleum,Energy,OCCIDENTAL PETROLEUM,,,,,occidental petroleum
+Marathon Petroleum,Energy,MARATHON PETROLEUM,,,,,marathon petroleum
+Phillips 66,Energy,PHILLIPS 66,,,,,phillips 66
+Valero,Energy,VALERO,,,,,valero
+Koch Industries,Energy,"KOCH (GOVERNMENT|INDUSTRIES|COMPANIES)|KOCH, INC|GEORGIA.?PACIFIC|FLINT HILLS","KOCH, INC|KOCH INDUSTRIES|GEORGIA.?PACIFIC|FLINT HILLS",^KOCH (INDUSTRIES|ENTERPRISES|INC|SUPPLY)|GEORGIA.?PACIFIC|FLINT HILLS,,,koch government|koch industries
+Southern Company,Energy,SOUTHERN COMPANY,,,,,southern company
+Duke Energy,Energy,DUKE ENERGY,,,,,duke energy
+NextEra Energy,Energy,NEXTERA|FLORIDA POWER & LIGHT|\bFPL\b,,,,,nextera|florida power & light|fpl
+American Electric Power,Energy,AMERICAN ELECTRIC POWER|\bAEP\b,,,,,american electric power|aep
+Exelon,Energy,EXELON,,,,,exelon
+Edison International,Energy,EDISON INTERNATIONAL|SOUTHERN CALIFORNIA EDISON,,,,,edison international|southern california edison
+PG&E,Energy,PACIFIC GAS|\bPG&E\b,,,,,pacific gas|pg&e
+Entergy,Energy,ENTERGY,,,,,entergy
+Dominion Energy,Energy,DOMINION (ENERGY|RESOURCES)|\bDOMINION\b,,,,,dominion energy|dominion resources
+Peabody Energy,Energy,PEABODY,,,,,peabody
+Dow / DuPont,Energy,DOW CHEMICAL|\bDOW INC|DUPONT,\bDOW INC|DOW CHEMICAL|DUPONT DE NEMOURS|E\.? ?I\.? DU ?PONT|EMPLOYEES OF DUPONT,^DOW (CHEMICAL|INC)|DUPONT DE NEMOURS|E\.? ?I\.? DU ?PONT|^DUPONT$|^DOW$,,,dow chemical|dow inc|dupont
+JPMorgan Chase,Finance,JPMORGAN|J\.?P\.? MORGAN|BANK ONE,,,,,jpmorgan|jp morgan|bank one
+Bank of America,Finance,BANK OF AMERICA|MERRILL,,,,,bank of america|merrill
+Wells Fargo,Finance,WELLS FARGO,,,,,wells fargo
+Citigroup,Finance,CITIGROUP|CITIBANK|CITICORP,,,,,citigroup|citibank|citicorp
+Goldman Sachs,Finance,GOLDMAN SACHS,,,,,goldman sachs
+Morgan Stanley,Finance,MORGAN STANLEY,,,,,morgan stanley
+Capital One,Finance,CAPITAL ONE,,,,,capital one
+Visa,Finance,\bVISA (INC|U)|VISA INTERNATIONAL,,^VISA( INC| USA| U\.?S\.?A| INTERNATIONAL),,,visa inc|visa international
+Mastercard,Finance,MASTERCARD,,,,,mastercard
+American Express,Finance,AMERICAN EXPRESS,,,,,american express
+MetLife,Finance,METLIFE,,,,,metlife
+Prudential Financial,Finance,PRUDENTIAL FINANCIAL,,,,,prudential financial
+AIG,Finance,AMERICAN INTERNATIONAL GROUP|\bAIG\b,,,,,american international group|aig
+Allstate,Finance,ALLSTATE,,,,,allstate
+Travelers,Finance,TRAVELERS,,,,,travelers
+State Farm,Finance,STATE FARM,STATE FARM (MUTUAL|AUTOMOBILE|INSURANCE),^STATE FARM( INSURANCE| INS\.?| MUTUAL)?$,,,state farm
+Berkshire Hathaway,Finance,BERKSHIRE HATHAWAY,,,,,berkshire hathaway
+BlackRock,Finance,BLACKROCK,,,,,blackrock
+Fidelity (FMR),Finance,\bFMR\b|FIDELITY INVESTMENTS,,,,,fmr|fidelity investments
+Vanguard,Finance,VANGUARD GROUP,,,,,vanguard group
+Aflac,Finance,AFLAC,,,,,aflac
+New York Life,Finance,NEW YORK LIFE,,,,,new york life
+Northwestern Mutual,Finance,NORTHWESTERN MUTUAL,,,,,northwestern mutual
+MassMutual,Finance,MASSACHUSETTS MUTUAL|MASSMUTUAL|MASS MUTUAL,,,,,massachusetts mutual|massmutual|mass mutual
+Nationwide,Finance,NATIONWIDE (MUTUAL|INSURANCE|FINANCIAL),,,,,nationwide mutual|nationwide financial
+Liberty Mutual,Finance,LIBERTY MUTUAL,,,,,liberty mutual
+USAA,Finance,UNITED SERVICES AUTOMOBILE|\bUSAA\b,,,,,united services automobile|usaa
+Chubb,Finance,CHUBB,,,,,chubb
+Blackstone,Finance,BLACKSTONE,,,,,blackstone
+Carlyle,Finance,CARLYLE GROUP,,,,,carlyle group
+Apollo,Finance,APOLLO (GLOBAL|MANAGEMENT),,,,,apollo global|apollo management
+Coinbase,Finance,COINBASE,,,,,coinbase
+FedEx,Transportation,FEDEX|FEDERAL EXPRESS,,,,,fedex|federal express
+UPS,Transportation,UNITED PARCEL SERVICE|\bUPS\b,,,,,united parcel service|ups
+Delta Air Lines,Transportation,DELTA AIR LINES,,,,,delta air lines
+American Airlines,Transportation,AMERICAN AIRLINES,,,,,american airlines
+United Airlines,Transportation,UNITED AIRLINES|CONTINENTAL AIRLINES,,,,,united airlines|continental airlines
+Southwest Airlines,Transportation,SOUTHWEST AIRLINES,,,,,southwest airlines
+Union Pacific,Transportation,UNION PACIFIC,,,,,union pacific
+BNSF,Transportation,BNSF|BURLINGTON NORTHERN,,,,,bnsf|burlington northern
+CSX,Transportation,\bCSX\b,,,,,csx
+Norfolk Southern,Transportation,NORFOLK SOUTHERN,,,,,norfolk southern
+General Motors,Transportation,GENERAL MOTORS|\bGM\b,GENERAL MOTORS,^GENERAL MOTORS|^GM$|^GM (SERVICES|FINANCIAL),,,general motors
+Ford Motor,Transportation,FORD MOTOR,FORD MOTOR COMPANY,,,,ford motor
+Toyota,Transportation,TOYOTA,,,,,toyota
+Stellantis / Chrysler,Transportation,STELLANTIS|\bFCA US|CHRYSLER,,,,,stellantis|fca us|chrysler
+Honda,Transportation,AMERICAN HONDA|HONDA NORTH AMERICA,,,,,american honda|honda north america
+Tesla,Transportation,TESLA,,,,,tesla
+Uber,Transportation,\bUBER\b,,,,,uber
+Altria / Philip Morris,Agribusiness,ALTRIA|PHILIP MORRIS|PMI US,,,,,altria|philip morris|pmi us
+PepsiCo,Agribusiness,PEPSICO,,,,,pepsico
+Coca-Cola,Agribusiness,COCA.?COLA,,,,,coca cola
+Bayer / Monsanto,Agribusiness,BAYER|MONSANTO,,,,,bayer|monsanto
+Corteva,Agribusiness,CORTEVA,,,,,corteva
+Archer Daniels Midland,Agribusiness,ARCHER.?DANIELS,,,,,archer daniels
+Tyson Foods,Agribusiness,TYSON,,,,,tyson
+Cargill,Agribusiness,CARGILL,,,,,cargill
+Kraft Heinz,Agribusiness,KRAFT HEINZ|KRAFT FOODS,,,,,kraft heinz|kraft foods
+Anheuser-Busch,Agribusiness,ANHEUSER.?BUSCH,,,,,anheuser busch
+Molson Coors,Agribusiness,MOLSON COORS,,,,,molson coors
+JBS,Agribusiness,\bJBS\b,,,,,jbs
+Walmart,Retail,WAL.?MART|WALMART,,,,,wal mart|walmart
+Target,Retail,\bTARGET (CORP|STORES)|TARGET CORPORATION,,^TARGET( CORP| STORES),,,target corp
+Home Depot,Retail,HOME DEPOT,,,,,home depot
+Lowe's,Retail,LOWE.?S COMPAN,,,,,lowe s compan
+Kroger,Retail,KROGER,,,,,kroger
+Costco,Retail,COSTCO,,,,,costco
+Nike,Retail,\bNIKE\b,,,,,nike
+Procter & Gamble,Retail,PROCTER (&|AND) GAMBLE,,,,,procter & gamble
+Caterpillar,Manufacturing,CATERPILLAR,,,,,caterpillar
+Deere,Manufacturing,DEERE (&|AND) CO,,,,,deere & co
+3M,Manufacturing,\b3M\b,,,,,3m company
+Bechtel,Construction,BECHTEL,,,,,bechtel
+AECOM,Construction,AECOM,,,,,aecom
+Jacobs,Construction,JACOBS (ENGINEERING|SOLUTIONS)|\bJACOBS\b,JACOBS (SOLUTIONS|ENGINEERING),^JACOBS (ENGINEERING|SOLUTIONS),,,jacobs engineering|jacobs solutions
+Nucor,Manufacturing,NUCOR,,,,,nucor
+U.S. Steel,Manufacturing,UNITED STATES STEEL|U\.?S\.? STEEL,,,,,united states steel|us steel

@@ -1,4 +1,4 @@
-import type { AllVotesSummary, FreshRow, LobOverview, LobSector, PromisesData, WarData, DefMember, DefOverview, DefRevolving, DefState, MemberInferred, Constituent, Definitions, DonorVote, MethodData, Scoreboard, TopVotes, SectorLine, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
+import type { AllVotesSummary, CompanyRevolving, MemberTrades, PresidentialData, RevolvingOverview, TradesOverview, MemberEarmarks, PledgeData, MoneyCoverage, CompanyDetail, CompanyRow, FreshRow, MemberOutside, OutsideOverview, LobOverview, LobSector, PromisesData, WarData, DefMember, DefOverview, DefRevolving, DefState, MemberInferred, Constituent, Definitions, DonorVote, MethodData, Scoreboard, TopVotes, SectorLine, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
 
 const cache = new Map<string, Promise<unknown>>()
 function get<T>(url: string): Promise<T> {
@@ -18,6 +18,18 @@ export const api = {
   members: () => get<MemberRow[]>('/api/members'),
   lobOverview: () => get<LobOverview>('/api/lobbying/overview'),
   lobSector: (sector: string) => get<LobSector>(`/api/lobbying/sector?sector=${encodeURIComponent(sector)}`),
+  companies: () => get<CompanyRow[]>('/api/companies'),
+  company: (slug: string) => get<CompanyDetail>(`/api/company/${slug}`),
+  outside: () => get<OutsideOverview>('/api/outside/overview'),
+  memberOutside: (id: string) => get<MemberOutside>(`/api/member/${id}/outside`),
+  moneyCoverage: () => get<MoneyCoverage[]>('/api/moneycoverage'),
+  pledges: () => get<PledgeData>('/api/pledges'),
+  memberEarmarks: (id: string) => get<MemberEarmarks>(`/api/member/${id}/earmarks`),
+  presidential: () => get<PresidentialData>('/api/presidential'),
+  trades: () => get<TradesOverview>('/api/trades/overview'),
+  memberTrades: (id: string) => get<MemberTrades>(`/api/member/${id}/trades`),
+  revolving: () => get<RevolvingOverview>('/api/revolving/overview'),
+  companyRevolving: (slug: string) => get<CompanyRevolving>(`/api/company/${slug}/revolving`),
   freshness: () => get<{ sources: FreshRow[] }>('/api/freshness'),
   definitions: () => get<Definitions>('/api/definitions'),
   profile: (id: string) => get<Profile>(`/api/member/${id}`),

@@ -4,10 +4,9 @@ Reads data/lobbying.duckdb (pipeline/32_lobbying.py), attached read-only on firs
 """
 from fastapi import APIRouter, HTTPException
 
-from server.api import DATA, _base_lock, _connection, db, rows
+from server.api import attach_once, db, rows
 
 router = APIRouter()
-_ready = False
 
 # Senate LDA general issue codes (the filing form's list)
 ISSUES = {
@@ -28,17 +27,7 @@ ISSUES = {
 
 
 def ensure() -> None:
-    global _ready
-    if _ready:
-        return
-    con = _connection()
-    with _base_lock:
-        if not _ready:
-            path = DATA / "lobbying.duckdb"
-            if not path.exists():
-                raise HTTPException(503, "lobbying data not built (run pipeline/32_lobbying.py)")
-            con.execute(f"ATTACH '{path.as_posix()}' AS lob (READ_ONLY)")
-            _ready = True
+    attach_once("lob", "lobbying.duckdb")
 
 
 @router.get("/api/lobbying/overview")
@@ -53,8 +42,13 @@ def overview():
         top = rows(con, """
             SELECT sector, client_id, any_value(client_name) AS name, any_value(label) AS label, sum(spend) AS spend, sum(spend) FILTER (WHERE year >= 2023) AS recent
             FROM lob.client_year GROUP BY sector, client_id QUALIFY row_number() OVER (PARTITION BY sector ORDER BY sum(spend) DESC) <= 12 ORDER BY sector, spend DESC""")
+    slugs = {}
+    if attach_once("co", "companies.duckdb", required=False):
+        with db() as con:
+            slugs = {r["client_id"]: r["slug"] for r in rows(con, "SELECT client_id, slug FROM co.client_company")}
     by = {}
     for r in top:
+        r["slug"] = slugs.get(r["client_id"])
         by.setdefault(r["sector"], []).append(r)
     return {"years": years, "money": money, "coverage": cover, "top_clients": by}
 

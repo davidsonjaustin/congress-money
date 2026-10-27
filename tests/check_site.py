@@ -43,7 +43,9 @@ def no_bad_numbers(obj) -> bool:
 
 # ---- every endpoint answers and contains no NaN/Infinity
 ENDPOINTS = ["/api/scoreboard?variant=all&sector=All%20business", "/api/scoreboard?variant=lobbied&sector=All%20business", "/api/method", "/api/allvotes/summary",
-             "/api/allvotes/top?label=oil%20gas&min_t=3.13&limit=10", "/api/defense/overview", "/api/defense/war", "/api/defense/promises", "/api/members", "/api/definitions"]
+             "/api/allvotes/top?label=oil%20gas&min_t=3.13&limit=10", "/api/defense/overview", "/api/defense/war", "/api/defense/promises", "/api/members", "/api/definitions",
+             "/api/lobbying/overview", "/api/lobbying/sector?sector=Health", "/api/companies", "/api/company/pfizer", "/api/outside/overview", "/api/member/E000071/outside", "/api/pledges",
+             "/api/moneycoverage", "/api/freshness"]
 data = {}
 for ep in ENDPOINTS:
     try:
@@ -76,6 +78,30 @@ s = data.get(ENDPOINTS[3])
 if s:
     gaps = [r["aligned"] - r["expected"] for r in sorted(s["dose"], key=lambda r: r["k"])]
     check("more money goes with a higher gap at every step", all(b > a for a, b in zip(gaps, gaps[1:])), str([round(g, 3) for g in gaps]))
+
+# ---- the pages added after the 2026-10-27 audit
+lob = data.get("/api/lobbying/overview")
+if lob:
+    c25 = next((c for c in lob["coverage"] if c["year"] == 2025), None)
+    check("more than two thirds of 2025 lobbying spend is placed in an industry", bool(c25) and c25["labelled"] / (c25["labelled"] + c25["unlabelled"]) > 0.66, str(c25))
+cos = data.get("/api/companies")
+if cos:
+    check("at least 100 companies are followed", len(cos) >= 100, str(len(cos)))
+    check("no company page claims a lobbying total of zero", all((c["lobbying"] or 0) > 0 for c in cos if c["slug"] not in ("palantir",)), str([c["slug"] for c in cos if not c["lobbying"]][:5]))
+out = data.get("/api/outside/overview")
+if out:
+    g = {}
+    for r in out["coverage"]:
+        g[r["grp"]] = g.get(r["grp"], 0) + r["amount"]
+    sorted_share = g.get("Sorted into an industry or group", 0) / max(1, sum(g.values()))
+    check("outside-spending attribution sorts a meaningful share (and says how much)", 0.2 < sorted_share < 0.9, f"{sorted_share:.2f}")
+pl = data.get("/api/pledges")
+if pl:
+    check("every pledge signer on the list was matched to a member", len(pl["members"]) == 71, str(len(pl["members"])))
+    check("pledge gifts exclude clean-energy and non-coal mining committees", not any(re.search(r"SUSTAINABLE|RENEWABLE|COEUR|ETHANOL", g["committee"].upper()) for g in pl["gifts"]))
+mc = data.get("/api/moneycoverage")
+if mc:
+    check("money coverage groups are present for individual gifts", any(m["source"] == "indiv" and m["grp"] == "sorted" for m in mc))
 
 # ---- company-reported shares: read from the filings, linked to them
 with open(ROOT / "pipeline" / "definitions" / "company_reported_share.csv", encoding="utf-8", newline="") as f:

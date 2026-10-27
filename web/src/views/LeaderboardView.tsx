@@ -30,7 +30,7 @@ export default function LeaderboardView({ defs, onOpen }: { defs: Definitions; o
     <div className="page">
       <div className="card">
         <h2>Who receives the most from a sector</h2>
-        <div className="sub">Ranks members by money from the chosen sector. A big total mostly reflects a long career, a safe seat or a committee post, so use it to find where to look, not as a finding.</div>
+        <div className="sub">Ranks members by money from the chosen sector. A big total mostly reflects a long career, a safe seat or a committee post, so use it to find where to look, not as a finding. These are the 28 broad money sectors; the vote tests elsewhere split some of them into narrower industries (oil and gas, banks, pharma and so on).</div>
         <div className="controls">
           <div className="ctl">Sector
             <select value={sector} onChange={(e) => setSector(e.target.value)}>{sectors.map((s) => <option key={s}>{s}</option>)}</select>

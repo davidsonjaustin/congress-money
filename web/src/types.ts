@@ -94,7 +94,56 @@ export type PromisesData = { items: PromiseItem[]; executive: ExecItem[] }
 export type FreshRow = { source: string; through: string | null; note: string }
 export type LobYear = { sector: string; year: number; spend: number; clients: number }
 export type LobMoney = { sector: string; year: number; lobbying: number | null; pac: number | null; indiv: number | null; contracts: number | null }
-export type LobClient = { sector: string; client_id: number; name: string; label: string; spend: number; recent: number | null }
+export type LobClient = { sector: string; client_id: number; name: string; label: string; spend: number; recent: number | null; slug?: string | null }
 export type LobOverview = { years: LobYear[]; money: LobMoney[]; coverage: { year: number; labelled: number; unlabelled: number }[]; top_clients: Record<string, LobClient[]> }
 export type LobBill = { bill: string; congress: number; title: string | null; became_law: boolean | null; clients: number; filings: number; house_vote: string | null; senate_vote: string | null }
 export type LobSector = { issues: { code: string; name: string; filings: number }[]; bills: LobBill[]; series: { name: string; year: number; spend: number }[] }
+export type CompanyRow = { slug: string; name: string; sector: string; in_defense: boolean; lobbying: number | null; lobbying_2025: number | null; pac: number | null; indiv: number | null; contracts: number | null }
+export type CompanyDetail = {
+  company: { slug: string; name: string; sector: string; in_defense: boolean }
+  years: { year: number; lobbying: number | null; pac: number | null; indiv: number | null; contracts: number | null }[]
+  issues: { code: string; name: string; filings: number }[]
+  bills: { bill: string; congress: number; title: string | null; filings: number; became_law: boolean | null }[]
+  members: { bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; chamber: string; pac: number; indiv: number }[]
+  pacs: string[]
+  reported: { company: string; year: number; share: number; share_with_fms: number | null; source_url: string; basis: string }[]
+}
+export type OutsideSpender = { cmte_id: string; name: string; support: number | null; oppose: number | null; total: number; funding_total: number; mix: { sector: string; share: number }[]; donors: { name: string; sector: string; amount: number }[] }
+export type OutsideOverview = { spenders: OutsideSpender[]; coverage: { kind: string; grp: string; amount: number }[]; cycles: { cycle: number; kind: string; amount: number }[] }
+export type MemberOutside = {
+  totals: { kind: string; amount: number }[]; by_sector: { kind: string; sector: string; amount: number }[]
+  funders: { kind: string; donor: string; sector: string; amount: number }[]; spenders: { kind: string; name: string; amount: number }[]
+}
+export type MoneyCoverage = { source: string; grp: 'sorted' | 'committees' | 'no_employer' | 'unsorted'; amount: number }
+export type PledgeData = {
+  pledges: { pledge: string }[]
+  members: { pledge: string; bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; chamber: string }[]
+  money: { pledge: string; bioguide: string; year: number; fossil: number; pac_all: number }[]
+  gifts: { pledge: string; bioguide: string; year: number; committee: string; amount: number }[]
+  votes: { grp: string; members: number; aligned: number; n: number }[]
+  sources: { pledge: string; source_url: string; read_on: string; how_obtained: string }[]
+}
+export type MemberEarmarks = {
+  total: { n: number; amount: number | null; share: number | null }
+  top: { project: string; recipient: string; amount: number; bill: string; n_requesters: number }[]
+  donor_match: { recipient: string; employer: string; amount_to_member: number; earmark_amount: number }[]
+}
+export type PresidentialData = { funding: { candidate: string; cycle: number; sector: string; amount: number }[]; employers: { candidate: string; cycle: number; employer: string; amount: number }[] }
+export type TradesOverview = {
+  sectors: { sector: string; trades: number; members: number; lo: number; hi: number }[]
+  years: { year: number; trades: number; lo: number; hi: number }[]
+  top: { bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; trades: number; lo: number; hi: number }[]
+  defense: { bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; trades: number; buys: number; sells: number; lo: number; hi: number; tickers: string | null }[]
+  coverage: { reports: number; reports_with_trades: number; trades: number; unmatched: number }
+}
+export type MemberTrades = {
+  by_sector: { sector: string; n: number; buys: number; sells: number; lo: number; hi: number; tickers: string | null }[]
+  by_year: { year: number; n: number; lo: number; hi: number }[]
+  recent: { d: string; tx: string; owner: string; asset: string; ticker: string; sector: string; lo: number; hi: number }[]
+}
+export type RevolvingOverview = {
+  per_company: { slug: string; name: string; sector: string; lobbyists: number; with_position: number; congress_roles: number; executive_roles: number }[]
+  by_sector: { sector: string; companies: number; lobbyists: number; with_position: number; congress_roles: number; executive_roles: number }[]
+  common_positions: { position: string; people: number }[]
+}
+export type CompanyRevolving = { available: boolean; lobbyists?: number; with_position?: number; congress_roles?: number; executive_roles?: number; examples?: { lobbyist: string; pos: string }[] }

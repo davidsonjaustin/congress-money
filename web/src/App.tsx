@@ -13,8 +13,13 @@ import DefenseView from './views/DefenseView'
 import CodebookView from './views/CodebookView'
 import AboutView from './views/AboutView'
 import LobbyingView from './views/LobbyingView'
+import CompaniesView from './views/CompaniesView'
+import OutsideView from './views/OutsideView'
+import PledgesView from './views/PledgesView'
+import PresidentialView from './views/PresidentialView'
+import TradesView from './views/TradesView'
 
-type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method' | 'votes' | 'defense' | 'codebook' | 'about' | 'lobbying'; id: string }
+type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method' | 'votes' | 'defense' | 'codebook' | 'about' | 'lobbying' | 'companies' | 'company' | 'outside' | 'pledges' | 'presidential' | 'trades'; id: string }
 
 function parse(hash: string): Route {
   const [, page, id] = hash.replace(/^#/, '').split('/')
@@ -27,6 +32,12 @@ function parse(hash: string): Route {
   if (page === 'codebook') return { page: 'codebook', id: '' }
   if (page === 'about') return { page: 'about', id: '' }
   if (page === 'lobbying') return { page: 'lobbying', id: '' }
+  if (page === 'companies') return { page: 'companies', id: '' }
+  if (page === 'company' && id) return { page: 'company', id }
+  if (page === 'outside') return { page: 'outside', id: '' }
+  if (page === 'pledges') return { page: 'pledges', id: '' }
+  if (page === 'presidential') return { page: 'presidential', id: '' }
+  if (page === 'trades') return { page: 'trades', id: '' }
   return { page: 'score', id: '' }
 }
 
@@ -60,16 +71,23 @@ export default function App() {
 
   if (err) return <div className="card" style={{ margin: 24 }}>Could not reach the data server ({err}). Start it with <code>run.bat</code>.</div>
 
-  const tabs: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'], ['lobbying', 'Lobbying', '#/lobbying'], ['defense', 'Defense', '#/defense'], ['votes', 'Every vote', '#/votes'], ['explore', 'Explore the data', '#/explore'],
-    ['sectors', 'Sector money', '#/sectors'], ['method', 'Findings & method', '#/method'], ['about', 'Sources', '#/about']]
+  // two rows: the questions the site answers, then the reference pages behind them
+  const main: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['votes', 'Every vote', '#/votes'], ['lobbying', 'Lobbying', '#/lobbying'], ['companies', 'Companies', '#/companies'],
+    ['outside', 'Outside money', '#/outside'], ['defense', 'Defense', '#/defense'], ['presidential', 'White House', '#/presidential'], ['trades', 'Stock trades', '#/trades'], ['pledges', 'Pledges', '#/pledges']]
+  const ref: [Route['page'], string, string][] = [['explore', 'Explore the data', '#/explore'], ['sectors', 'Sector money', '#/sectors'], ['method', 'Findings & method', '#/method'], ['about', 'Sources', '#/about'], ['codebook', 'Vote codebook', '#/codebook']]
+  const active = route.page === 'company' ? 'companies' : route.page
+  const tabs = [...(route.page === 'case' ? [['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'] as [Route['page'], string, string]] : []), ...main]
   return (
     <div className="app">
       <header className="topbar">
         <h1>Congress Money Tracker</h1>
-        <nav className="tabs" role="tablist">
-          {tabs.filter(([k]) => k !== 'case' || route.page === 'case').map(([k, l, h]) => (
-            <button key={k} role="tab" className="tab" aria-selected={route.page === k} onClick={() => go(h)}>{l}</button>
+        <nav className="tabs" role="tablist" aria-label="Main">
+          {tabs.map(([k, l, h]) => (
+            <button key={k} role="tab" className="tab" aria-selected={active === k} onClick={() => go(h)}>{l}</button>
           ))}
+        </nav>
+        <nav className="tabs ref" aria-label="Reference">
+          {ref.map(([k, l, h]) => <button key={k} className="tab" aria-selected={active === k} onClick={() => go(h)}>{l}</button>)}
         </nav>
         <span className="spacer" />
         <button className="iconbtn" onClick={cycleTheme} title="Switch light / dark / follow system">Theme: {theme}</button>
@@ -106,7 +124,12 @@ export default function App() {
       {route.page === 'sectors' && defs && <main className="main"><LeaderboardView defs={defs} onOpen={(id) => go(`#/case/${id}`)} /></main>}
       {route.page === 'defense' && <main className="main"><DefenseView onOpen={(id) => go(`#/case/${id}`)} /></main>}
       {route.page === 'votes' && <main className="main"><AllVotesView /></main>}
-      {route.page === 'lobbying' && <main className="main"><LobbyingView /></main>}
+      {route.page === 'lobbying' && <main className="main"><LobbyingView onCompany={(s) => go(`#/company/${s}`)} /></main>}
+      {(route.page === 'companies' || route.page === 'company') && <main className="main"><CompaniesView slug={route.page === 'company' ? route.id : undefined} onOpenCompany={(s) => go(`#/company/${s}`)} onOpenMember={(id) => go(`#/case/${id}`)} /></main>}
+      {route.page === 'outside' && <main className="main"><OutsideView /></main>}
+      {route.page === 'presidential' && <main className="main"><PresidentialView /></main>}
+      {route.page === 'trades' && <main className="main"><TradesView onOpen={(id) => go(`#/case/${id}`)} /></main>}
+      {route.page === 'pledges' && <main className="main"><PledgesView onOpen={(id) => go(`#/case/${id}`)} /></main>}
       {route.page === 'about' && defs && <main className="main"><AboutView defs={defs} /></main>}
       {route.page === 'codebook' && defs && <main className="main"><CodebookView defs={defs} /></main>}
       {route.page === 'method' && defs && <main className="main"><MethodView defs={defs} /></main>}

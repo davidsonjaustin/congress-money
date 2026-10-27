@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 import { api } from '../api'
-import type { Constituent, DefMember, DefState, Definitions, DonorVote, InferredVote, MemberInferred, Profile, Scored, SectorLine } from '../types'
+import type { Constituent, DefMember, DefState, Definitions, DonorVote, InferredVote, MemberEarmarks, MemberInferred, MemberTrades, MemberOutside, Profile, Scored, SectorLine } from '../types'
 import { useWidth } from '../hooks'
 import { fmtLift, fmtMoney, industryName, liftRange, ordinal, shortName } from '../util'
 import { ConstituentsCard, DonorVotesCard } from './MemberView'
@@ -23,8 +23,14 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
   const [inf, setInf] = useState<MemberInferred | null>(null)
   const [dm, setDm] = useState<DefMember | null>(null)
   const [dStates, setDStates] = useState<DefState[]>([])
+  const [outside, setOutside] = useState<MemberOutside | null>(null)
+  const [earmarks, setEarmarks] = useState<MemberEarmarks | null>(null)
+  const [trades, setTrades] = useState<MemberTrades | null>(null)
 
   useEffect(() => { setInf(null); api.inferred(id).then(setInf).catch(() => undefined) }, [id])
+  useEffect(() => { setOutside(null); api.memberOutside(id).then(setOutside).catch(() => undefined) }, [id])
+  useEffect(() => { setTrades(null); api.memberTrades(id).then(setTrades).catch(() => undefined) }, [id])
+  useEffect(() => { setEarmarks(null); api.memberEarmarks(id).then(setEarmarks).catch(() => undefined) }, [id])
   useEffect(() => {
     setDm(null)
     api.defMembers().then((r) => setDm(r.find((m) => m.bioguide === id) ?? null)).catch(() => undefined)
@@ -139,6 +145,10 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
       <IndustryTable sectors={sectors} inf={inf} />
       {inf && <EveryVoteCard inf={inf} />}
       {dm && ((dm.pac_all ?? 0) >= 25000 || dm.n >= 5) && <DefenseCard m={dm} states={dStates} />}
+
+      {outside && <OutsideCard o={outside} who={who} />}
+      {trades && trades.by_sector.length > 0 && <TradesCard t={trades} who={who} />}
+      {earmarks && earmarks.total.n > 0 && <EarmarkCard e={earmarks} who={who} />}
 
       {donors.length > 0 && (
         <div className="card">
@@ -330,6 +340,90 @@ function DefenseCard({ m, states }: { m: DefMember; states: DefState[] }) {
         {m.district_dod != null && <li>In their House district: <strong>{fmtMoney(m.district_dod)}</strong> a year in DoD prime contracts (approximate district boundaries).</li>}
       </ul>
       <div className="hint">Contracts at home are a local reason to back defense spending that is separate from donations. The defense page shows how votes, money and local contracts line up across members.</div>
+    </div>
+  )
+}
+
+const HIDDEN_GROUPS = new Set(['Other political committees', 'Nonprofits that do not disclose their donors', 'Not identifiable (retired / unemployed / no employer)', 'Other / unclassified'])
+
+/** Outside spending in this member's races, and who paid for the groups that spent it. */
+function OutsideCard({ o, who }: { o: MemberOutside; who: string }) {
+  const tot = (k: string) => o.totals.find((t) => t.kind === k)?.amount ?? 0
+  if (tot('support') + tot('oppose') < 50000) return null
+  const mix = (k: string) => {
+    const rows = o.by_sector.filter((r) => r.kind === k)
+    const sum = rows.reduce((a, r) => a + r.amount, 0) || 1
+    return rows.slice(0, 6).map((r) => ({ sector: r.sector, share: r.amount / sum }))
+  }
+  const col = (k: 'support' | 'oppose', title: string) => (
+    <div>
+      <div className="fh">{title}: {fmtMoney(tot(k))}</div>
+      <ul className="facts">
+        {mix(k).map((m) => <li key={m.sector} className={HIDDEN_GROUPS.has(m.sector) ? 'hint' : undefined}>{Math.round(100 * m.share)}% {m.sector.replace('Nonprofits that do not disclose their donors', 'nonprofits (their donors are hidden)')}</li>)}
+      </ul>
+      {o.funders.filter((f) => f.kind === k).slice(0, 5).map((f) => <div key={f.donor} className="hint">{f.donor.length > 48 ? `${f.donor.slice(0, 46)}…` : f.donor} · about {fmtMoney(f.amount)}</div>)}
+    </div>
+  )
+  return (
+    <div className="card">
+      <h2>Outside money in {who}’s races</h2>
+      <div className="sub">
+        Super PACs and other outside groups spent <strong>{fmtMoney(tot('support'))}</strong> for {who} and <strong>{fmtMoney(tot('oppose'))}</strong> against. They cannot coordinate with a campaign, but the people and industries paying them are on record.
+        Below, each spender’s money is split the way it was funded, so the figures are an attribution, not a trace of single dollars.
+      </div>
+      <div className="threecol">
+        {tot('support') > 0 && col('support', 'Spent for')}
+        {tot('oppose') > 0 && col('oppose', 'Spent against')}
+        <div>
+          <div className="fh">Biggest spenders</div>
+          <ul className="facts">{o.spenders.slice(0, 6).map((s) => <li key={`${s.kind}${s.name}`}>{s.name} <span className="hint">· {s.kind === 'support' ? 'for' : 'against'} · {fmtMoney(s.amount)}</span></li>)}</ul>
+        </div>
+      </div>
+      <div className="hint">An individual’s industry comes from the employer they list. Named donors are organisations and people who gave $100,000 or more to the spender. More on the <a href="#/outside">Outside money</a> page.</div>
+    </div>
+  )
+}
+
+/** Earmarks this member requested in the fiscal 2024 appropriations (the pilot year), with any recipient that is also an employer of their donors. */
+function EarmarkCard({ e, who }: { e: MemberEarmarks; who: string }) {
+  return (
+    <div className="card">
+      <h2>Earmarks {who} requested (fiscal 2024)</h2>
+      <div className="sub">
+        {e.total.n} projects worth <strong>{fmtMoney(e.total.amount ?? 0)}</strong> (a project with several requesters is counted in full for each). Source: the House Appropriations Committee’s published tables for the final fiscal 2024 bills, which leave out defense earmarks; other years are not loaded yet.
+      </div>
+      <ul className="facts">
+        {e.top.slice(0, 6).map((p, i) => <li key={i}>{fmtMoney(p.amount)} · {p.recipient || p.project}{p.recipient && p.project ? <span className="hint"> — {p.project.slice(0, 80)}</span> : null} <span className="hint">· {p.bill}{p.n_requesters > 1 ? ` · ${p.n_requesters} requesters` : ''}</span></li>)}
+      </ul>
+      {e.donor_match.length > 0 && (
+        <>
+          <div className="fh" style={{ marginTop: 8 }}>Recipients that are also employers of {who}’s donors</div>
+          <ul className="facts">{e.donor_match.map((m, i) => <li key={i}>{m.recipient}: earmark {fmtMoney(m.earmark_amount)}; people listing “{m.employer}” gave {who} {fmtMoney(m.amount_to_member)} since 2019.</li>)}</ul>
+          <div className="hint">Name matches only. The same name does not show the donors were connected to the project, and an earmark can serve a community while it benefits a donor.</div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Stock trades this member (or their spouse or child) reported under the STOCK Act. */
+function TradesCard({ t, who }: { t: MemberTrades; who: string }) {
+  const n = t.by_sector.reduce((a, s) => a + s.n, 0)
+  const lo = t.by_sector.reduce((a, s) => a + s.lo, 0), hi = t.by_sector.reduce((a, s) => a + s.hi, 0)
+  const interesting = t.by_sector.filter((s) => !['Funds, bonds and other', 'Unclassified'].includes(s.sector)).slice(0, 6)
+  return (
+    <div className="card">
+      <h2>Stock trades reported by {who}</h2>
+      <div className="sub">
+        {n} trades since 2014, worth between <strong>{fmtMoney(lo)}</strong> and <strong>{fmtMoney(hi)}</strong> (values are reported only as ranges). Includes trades by a spouse or dependent child. House reports only. A trade is not wrongdoing; it shows where the family’s money sits next to the votes.
+        See <a href="#/trades">Stock trades</a> for everyone.
+      </div>
+      <div className="scroll-x">
+        <table className="data">
+          <thead><tr><th style={{ textAlign: 'left' }}>Industry of the stock</th><th>Trades</th><th>Buys / sells</th><th>Amount, low to high</th><th style={{ textAlign: 'left' }}>Tickers</th></tr></thead>
+          <tbody>{interesting.map((s) => <tr key={s.sector}><td style={{ textAlign: 'left' }}>{s.sector}</td><td>{s.n}</td><td>{s.buys} / {s.sells}</td><td>{fmtMoney(s.lo)} – {fmtMoney(s.hi)}</td><td style={{ textAlign: 'left' }} className="hint">{(s.tickers ?? '').split(' ').slice(0, 8).join(', ')}</td></tr>)}</tbody>
+        </table>
+      </div>
     </div>
   )
 }

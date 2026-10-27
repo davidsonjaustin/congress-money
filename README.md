@@ -8,7 +8,7 @@ own districts said, and tests whether money arrives before or after the votes.
 > anyone was bought. See "Findings & method" in the app for what the numbers can and cannot say.
 
 ## Run it
-1. Python 3.14 venv with `duckdb pandas numpy pyarrow requests fastapi uvicorn pypdf xlrd pyyaml` and Node 20+.
+1. Python 3.14 venv with `duckdb pandas numpy pyarrow requests fastapi uvicorn pypdf pdfplumber xlrd pyyaml` and Node 20+.
 2. Build the data (see *Pipeline*); raw data and DuckDB files live in `data/` and are **not** in git.
 3. `cd web && npm install && npm run build`, then double-click `run.bat` (or `python -m uvicorn server.api:app --port 8000`) and open http://127.0.0.1:8000.
    The server holds `data/analysis.duckdb` open read-only, so stop it before re-running a step that rewrites that file.
@@ -43,6 +43,25 @@ own districts said, and tests whether money arrives before or after the votes.
 | 25 defense votes | defense vote directions: Peace Action scorecard (inverted on a fiscal rule) plus every NDAA / defense appropriations passage vote since 2008 |
 | 26 revolving door | defense companies' lobbyists and the government positions they report (LDA API) |
 | 27 war powers | every vote on a resolution directing removal of US forces from hostilities since 2008 |
+| 28 reported shares | each contractor's share of revenue from the US government, read from its 10-K on SEC EDGAR -> `company_reported_share.csv` |
+| 29 / 29b clerk votes, vote labels | House Clerk roll-call files; labels amendment votes with who offered them |
+| 30 superpac donors | FEC receipts of every outside-spending committee (individuals, organisations, other committees), streamed per cycle -> data/superpac.duckdb |
+| 31 ie traced | splits each outside spender's money the way it was funded, by industry; named donors per member |
+| 32 lobbying | lobbying spend by client, industry, issue and bill; beside PAC gifts and contracts -> data/lobbying.duckdb |
+| 33 companies | per company (~130 plus the defense firms): lobbying, PAC and employee gifts, contracts, bills, issues, recipients -> data/companies.duckdb |
+| 34 revolving all | lobbyists and the government jobs they report, for the biggest lobbying companies outside defense -> data/revolving.duckdb |
+| 35 house trades | STOCK Act trades by House members, read from the Clerk's PDF reports -> data/trades.duckdb |
+| 36 pledges | pledge signers (definitions/pledges.csv) against the money the pledge was about, and their votes -> data/pledges.duckdb |
+| 37 presidential donors | itemized receipts of presidential campaign and joint fundraising committees by donor industry -> data/presidential.duckdb |
+| 38 earmarks | fiscal 2024 earmarks from the House Appropriations Committee's final tables (pilot) -> data/earmarks.duckdb |
+| 39 trade analysis | puts each traded stock in an industry (SEC SIC code) and totals by member |
+
+Hand-labelled lists that feed the steps above: `employer_overrides.csv` (largest donor employers), `org_overrides.csv` (organisations giving to outside spenders),
+`lobbying_client_overrides.csv` (largest lobbying clients), `companies.csv`. Each says how it was made.
+
+## Checks
+With the server running: `.venv\Scripts\python.exe tests\check_site.py`. It fails if an endpoint returns NaN, counts disagree between pages, a ranking ignores the party control,
+a label has no display name, or the site text says something is unbuilt that is built. Run it after every rebuild.
 
 ## Locked definitions (`pipeline/definitions/`)
 Which bills touch which sector, and **which way each vote helps each industry**, are written down and hashed (`LOCK*.txt`) *before* any model

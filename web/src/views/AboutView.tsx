@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { Coverage, Definitions, FreshRow } from '../types'
+import type { Coverage, Definitions, FreshRow, MoneyCoverage } from '../types'
 
 export default function AboutView({ defs }: { defs: Definitions }) {
   const [cov, setCov] = useState<Coverage | null>(null)
   const [fresh, setFresh] = useState<FreshRow[]>([])
-  useEffect(() => { api.scoreboard('all', 'All business').then((r) => setCov(r.coverage)).catch(() => undefined); api.freshness().then((r) => setFresh(r.sources)).catch(() => undefined) }, [])
+  const [mc, setMc] = useState<MoneyCoverage[]>([])
+  useEffect(() => { api.scoreboard('all', 'All business').then((r) => setCov(r.coverage)).catch(() => undefined); api.freshness().then((r) => setFresh(r.sources)).catch(() => undefined); api.moneyCoverage().then(setMc).catch(() => undefined) }, [])
+  const share = (src: string, grp: string) => { const t = mc.filter((m) => m.source === src).reduce((a, m) => a + m.amount, 0); const g = mc.find((m) => m.source === src && m.grp === grp)?.amount ?? 0; return t > 0 ? `${Math.round((100 * g) / t)}%` : '–' }
   const lm = cov?.landmark_by_match ?? {}
   const documented = new Set(defs.direction.map((r) => `${r.congress}-${r.chamber}-${r.rollnumber}`)).size
   return (
@@ -36,8 +38,8 @@ export default function AboutView({ defs }: { defs: Definitions }) {
         <h3>What is shown</h3>
         <ul>
           <li><strong>PAC gifts</strong>: money a political action committee gave directly to the member (FEC Schedule B, type 24K). The PAC’s sector comes from its name, its connected organization and about 600 hand-checked labels.</li>
-          <li><strong>Individual gifts</strong>: itemized donations of $200 or more to the member’s own committees. The sector is guessed from the donor’s stated employer and occupation. About 38% of dollars have no usable employer (retired, unemployed, blank) and another 26% don’t match a sector rule, so treat these as estimates.</li>
-          <li><strong>Outside spending for / against</strong>: independent expenditures by groups that cannot coordinate with the campaign. Spending <em>against</em> a member helps their opponent, not them. These are never added to gifts.</li>
+          <li><strong>Individual gifts</strong>: itemized donations of $200 or more to the member’s own committees. The sector is taken from the donor’s stated employer and occupation, with a hand-checked list for the largest employers. Of these dollars, <strong>{share('indiv', 'sorted')}</strong> are put in an industry, <strong>{share('indiv', 'no_employer')}</strong> list no usable employer (retired, unemployed, blank) and <strong>{share('indiv', 'unsorted')}</strong> name an employer we do not recognise. Treat industry totals from individual gifts as a floor.</li>
+          <li><strong>Outside spending for / against</strong>: independent expenditures by groups that cannot coordinate with the campaign. Spending <em>against</em> a member helps their opponent, not them. These are never added to gifts. The spender’s own name rarely says who is behind it, so the <a href="#/outside">Outside money</a> page and each case file follow the money one step back to the spender’s donors.</li>
           <li><strong>Votes</strong>: every Yea/Nay roll call since the 109th Congress (2005), from Voteview.</li>
           <li><strong>Party-line vote</strong>: a roll call where most Democrats voted against most Republicans. <strong>Broke from party</strong>: voted against their own party’s majority on one.</li>
           <li><strong>Model chance</strong>: the probability that a statistical model of ideology (DW-NOMINATE) gave to the vote the member actually cast. “Surprising” means under 25%. The ideology scores are estimated from the same votes, so this is a generous yardstick: it flatters how well ideology predicts votes.</li>
@@ -76,10 +78,13 @@ export default function AboutView({ defs }: { defs: Definitions }) {
 
         <h3>Not covered yet</h3>
         <ul>
-          <li><strong>Individual donors and outside spending in the scores</strong>: only direct PAC gifts are scored. Most individual dollars and super-PAC dollars cannot yet be assigned to an industry (the shares are above).</li>
-          <li><strong>Lobbying and government funding outside defense</strong>: lobbying is used to pick the votes an industry cared about, but spending, targets and contracts are only broken out for defense.</li>
-          <li><strong>The executive branch</strong>: donors to presidential campaigns, their super PACs and inaugural committees are not yet linked to executive actions.</li>
-          <li><strong>Members’ own finances</strong>: stock-trade and asset disclosures, and earmarks.</li>
+          <li><strong>Individual donors and outside spending in the vote scores</strong>: the scores use direct PAC gifts only. Individual gifts and outside spending are shown, by industry where the donor’s employer or the spender’s funders allow, on the member, company and outside-money pages, not yet in the money-versus-vote tests.</li>
+          <li><strong>Contracts and grants outside defense</strong>: contracts are shown for the ~235 largest recipients each year, grouped by name. Grants, loans, subsidies and Medicare or Medicaid payments to industries are not included.</li>
+          <li><strong>Lobbyists’ government backgrounds</strong>: read for defense contractors and for the 70 biggest lobbying companies outside defense, not for every client.</li>
+          <li><strong>The executive branch</strong>: who paid for presidential campaigns is shown (White House tab); donors are not yet linked to executive orders, appointments or contracts, and inaugural committees and dark-money groups are not included.</li>
+          <li><strong>Members’ own finances</strong>: House stock trades are shown; Senate trades are not (the Senate’s site requires accepting its terms first), and asset and income disclosures are not.</li>
+          <li><strong>Earmarks</strong>: fiscal 2024 only, from the House Appropriations Committee’s published tables, without defense earmarks.</li>
+          <li><strong>Pledges</strong>: the No Fossil Fuel Money pledge only. Corporate-PAC pledge lists are not published in a form that can be loaded.</li>
           <li><strong>District opinion on most bills</strong>: only the landmark votes above are covered.</li>
         </ul>
       </div>
