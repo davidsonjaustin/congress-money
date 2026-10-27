@@ -134,7 +134,7 @@ export type TradesOverview = {
   years: { year: number; trades: number; lo: number; hi: number }[]
   top: { bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; trades: number; lo: number; hi: number }[]
   defense: { bioguide: string; name: string; party: 'D' | 'R' | 'I'; state: string; trades: number; buys: number; sells: number; lo: number; hi: number; tickers: string | null }[]
-  coverage: { reports: number; reports_with_trades: number; trades: number; unmatched: number }
+  coverage: { reports: number; reports_with_trades: number; trades: number; unmatched: number; parse_by_year: { year: number; expected: number; parsed: number }[] }
 }
 export type MemberTrades = {
   by_sector: { sector: string; n: number; buys: number; sells: number; lo: number; hi: number; tickers: string | null }[]

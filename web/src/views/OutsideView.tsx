@@ -34,7 +34,7 @@ export default function OutsideView() {
             <h3>How much of it can be traced to an industry</h3>
             <div className="bars">
               {groups.map((g) => (
-                <div key={g.grp} className="hrow" style={{ gridTemplateColumns: '260px 1fr 120px' }}>
+                <div key={g.grp} className="hrow" style={{ gridTemplateColumns: 'minmax(110px, 260px) minmax(40px, 1fr) minmax(80px, 120px)' }}>
                   <span className="nm">{g.grp}</span><span className="track"><i style={{ width: `${100 * g.share}%`, background: g.grp.startsWith('Sorted') ? 'var(--s2)' : 'var(--muted)' }} /></span><span className="amt">{pc(g.share)} · {bn(g.amount)}</span>
                 </div>
               ))}

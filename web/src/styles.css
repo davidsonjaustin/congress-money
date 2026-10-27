@@ -235,3 +235,6 @@ table.data { max-width: none; }
 .tabs.ref .tab { padding: 3px 10px; }
 .tabs { overflow-x: auto; }
 @media (max-width: 760px) { .tabs.ref { order: 4; } }
+
+.seg { flex-wrap: wrap; }
+.hrow .amt, .hrow .nm { min-width: 0; overflow-wrap: anywhere; }

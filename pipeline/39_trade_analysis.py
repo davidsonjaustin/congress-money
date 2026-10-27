@@ -1,13 +1,12 @@
 """Members' stock trades by industry.
 
-Matches each House Periodic Transaction Report to a member, puts each stock in an industry from the company's SEC standard industrial classification (SIC) code, and
+Matches each House Periodic Transaction Report to a member, puts each stock in an industry from a hand-labelled list of the most-traded tickers, and
 totals the trades by member and industry. Amounts are reported only as ranges, so totals are given as a low-high pair and never as a single figure.
 
-Industry from SIC: the company's code is read from the SEC's own submissions file for its ticker. Tickers the SEC no longer lists (delisted or renamed) fall back to the
-keyword rules used for PACs on the asset's name, and anything still unplaced is 'Unclassified'. Mutual funds, ETFs, bonds and Treasuries are 'Funds, bonds and other'.
+Industry: the ~1,000 most-traded tickers (84% of trades) are labelled in definitions/ticker_sector.txt by what the company does. Other tickers fall back to the keyword rules
+used for PACs on the asset's name, and anything still unplaced is 'Unclassified'. Mutual funds, ETFs, bonds and Treasuries are 'Funds, bonds and other'.
 
 Output (data/trades.duckdb):
-  ticker_sic(ticker, cik, title, sic, sic_desc)
   trade_clean(doc_id, bioguide, year, tx_date, tx, owner, asset, ticker, sector, lo, hi)
   trade_member(bioguide, year, n, buys, sells, lo, hi)
   trade_sector_member(bioguide, sector, n, buys, sells, lo, hi, tickers)
@@ -98,24 +97,16 @@ def main() -> None:
     con = duckdb.connect(str(ROOT / "data" / "trades.duckdb"))
     con.execute(f"ATTACH '{(ROOT / 'data' / 'congress.duckdb').as_posix()}' AS c (READ_ONLY)")
 
-    # 1. ticker -> SIC from the SEC
-    have = {r[0] for r in con.execute("SELECT ticker FROM ticker_sic").fetchall()} if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'ticker_sic'").fetchone()[0] else set()
-    want = [r[0] for r in con.execute("SELECT DISTINCT upper(ticker) FROM house_trades WHERE ticker <> '' AND asset_type IN ('ST', 'OP')").fetchall()]
-    tk = requests.get("https://www.sec.gov/files/company_tickers.json", headers=H, timeout=60).json()
-    cik_of = {v["ticker"].upper(): v["cik_str"] for v in tk.values()}
-    todo = [(t, cik_of[t]) for t in want if t in cik_of and t not in have]
-    print(f"{len(want)} tickers traded; {len(todo)} to look up at the SEC", flush=True)
-    rows = []
-    with ThreadPoolExecutor(max_workers=5) as pool:
-        for k, r in enumerate(pool.map(fetch_sic, todo)):
-            rows.append(r)
-            if k % 500 == 0:
-                print(k, "looked up", flush=True)
-    if rows:
-        df = pd.DataFrame(rows, columns=["ticker", "cik", "title", "sic", "sic_desc"])
-        con.execute("CREATE TABLE IF NOT EXISTS ticker_sic (ticker VARCHAR, cik VARCHAR, title VARCHAR, sic INT, sic_desc VARCHAR)")
-        con.execute("INSERT INTO ticker_sic SELECT * FROM df")
-    sic = {r[0]: r[1] for r in con.execute("SELECT ticker, sic FROM ticker_sic WHERE sic IS NOT NULL").fetchall()}
+    # 1. ticker -> industry, from definitions/ticker_sector.txt (the ~1,000 most-traded tickers, labelled by what the company does; they cover 84% of the trades)
+    LETTER = {"A": "Agribusiness & Food", "E": "Energy & Natural Resources", "C": "Construction", "H": "Health", "M": "Manufacturing & Industrial", "T": "Tech, Telecom & Media",
+              "D": "Defense & Aerospace", "R": "Transportation", "F": "Finance, Insurance & Real Estate", "L": "Retail & Consumer", "V": "Travel, Lodging & Leisure", "U": "Education",
+              "X": "Funds, bonds and other"}
+    tickers = {}
+    for tok in (Path(__file__).with_name("definitions") / "ticker_sector.txt").read_text(encoding="utf-8").split():
+        t, _, letter = tok.rpartition(":")
+        if letter in LETTER:
+            tickers[t.upper()] = LETTER[letter]
+    print(f"{len(tickers)} tickers labelled by hand", flush=True)
 
     # 2. filer -> member
     ptr = con.execute("SELECT doc_id, year, last, first, state_dst, filed FROM house_ptr").df()
@@ -155,11 +146,8 @@ def main() -> None:
     def sector(r) -> str:
         if r.asset_type in FUNDS:
             return "Funds, bonds and other"
-        s = sic.get(r.ticker)
-        if s is not None:
-            x = sic_sector(s)
-            if x:
-                return x
+        if r.ticker in tickers:
+            return tickers[r.ticker]
         name = (r.asset or "").upper()
         for sec, rx in s03.RULES_RE:
             if sec not in ("Labor", "Ideological / Single-Issue", "Lawyers & Lobbyists", "General Business Associations") and rx.search(name):

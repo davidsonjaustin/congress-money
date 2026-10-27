@@ -20,7 +20,8 @@ export default function PresidentialView() {
     const sectors = [...new Set(cands.flatMap((c) => by(c).map((f) => f.sector)))]
     const rows = sectors.map((s) => ({ sector: s, vals: cands.map((c) => (by(c).find((f) => f.sector === s)?.amount ?? 0) / (tot(c) || 1)), amts: cands.map((c) => by(c).find((f) => f.sector === s)?.amount ?? 0) }))
       .sort((a, b) => Math.max(...b.vals) - Math.max(...a.vals))
-    return { rows, totals: cands.map(tot) }
+    const def = cands.map((c) => by(c).find((f) => f.sector === 'Defense & Aerospace')?.amount ?? 0)
+    return { rows, totals: cands.map(tot), def }
   }, [d, cycle, cands.join('|')])
   if (err) return <div className="card hint">Could not load presidential data ({err}). Run pipeline step 37, then restart the server.</div>
   if (!d || !view) return <div className="card hint">Loading…</div>
@@ -51,6 +52,10 @@ export default function PresidentialView() {
             </tbody>
           </table>
         </div>
+        <p style={{ marginTop: 8 }}>
+          Employees and PACs of defense and aerospace companies gave {cands.map((c, i) => `${c} ${fmtMoney(view.def[i])} (${view.totals[i] ? (100 * view.def[i] / view.totals[i]).toFixed(2) : '0'}% of itemized money)`).join(', ')} in {cycle}.
+          For scale, defense-industry PACs gave members of Congress about $183 million between 2005 and 2026 (Defense tab).
+        </p>
         <div className="fh" style={{ marginTop: 10 }}>Employers whose staff gave the most, {cycle}</div>
         <div className="threecol">
           {cands.map((c) => (

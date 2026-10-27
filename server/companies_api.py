@@ -205,6 +205,8 @@ def trades_overview():
             SELECT s.bioguide, p.name, p.party, p.state, s.n AS trades, s.buys, s.sells, s.lo, s.hi, s.tickers
             FROM tr.trade_sector_member s JOIN {people(con)} p ON p.bioguide = s.bioguide WHERE s.sector = 'Defense & Aerospace' ORDER BY s.n DESC LIMIT 15""")
         cover = rows(con, "SELECT (SELECT count(*) FROM tr.house_ptr) AS reports, (SELECT count(*) FROM tr.ptr_done WHERE n > 0) AS reports_with_trades, (SELECT count(*) FROM tr.trade_clean) AS trades, (SELECT count(*) FROM tr.trade_unmatched) AS unmatched")[0]
+        parse = rows(con, "SELECT p.year, sum(d.expected) AS expected, sum(d.n) AS parsed FROM tr.ptr_done d JOIN tr.house_ptr p USING (doc_id) GROUP BY 1 ORDER BY 1")
+    cover["parse_by_year"] = parse
     return {"sectors": sectors, "years": years, "top": top, "defense": defense, "coverage": cover}
 
 

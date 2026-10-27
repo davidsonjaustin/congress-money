@@ -45,7 +45,7 @@ def no_bad_numbers(obj) -> bool:
 ENDPOINTS = ["/api/scoreboard?variant=all&sector=All%20business", "/api/scoreboard?variant=lobbied&sector=All%20business", "/api/method", "/api/allvotes/summary",
              "/api/allvotes/top?label=oil%20gas&min_t=3.13&limit=10", "/api/defense/overview", "/api/defense/war", "/api/defense/promises", "/api/members", "/api/definitions",
              "/api/lobbying/overview", "/api/lobbying/sector?sector=Health", "/api/companies", "/api/company/pfizer", "/api/outside/overview", "/api/member/E000071/outside", "/api/pledges",
-             "/api/moneycoverage", "/api/freshness"]
+             "/api/moneycoverage", "/api/freshness", "/api/trades/overview", "/api/presidential", "/api/revolving/overview", "/api/member/E000071/trades", "/api/member/E000071/earmarks"]
 data = {}
 for ep in ENDPOINTS:
     try:
@@ -99,6 +99,16 @@ pl = data.get("/api/pledges")
 if pl:
     check("every pledge signer on the list was matched to a member", len(pl["members"]) == 71, str(len(pl["members"])))
     check("pledge gifts exclude clean-energy and non-coal mining committees", not any(re.search(r"SUSTAINABLE|RENEWABLE|COEUR|ETHANOL", g["committee"].upper()) for g in pl["gifts"]))
+tr = data.get("/api/trades/overview")
+if tr:
+    check("trade ranges are ordered (low never above high)", all(x["lo"] <= x["hi"] for x in tr["sectors"]))
+    check("most trade report lines were read since 2021", all(y["parsed"] >= 0.9 * y["expected"] for y in tr["coverage"]["parse_by_year"] if y["year"] >= 2022 and y["expected"] > 100), str(tr["coverage"]["parse_by_year"][-4:]))
+pr = data.get("/api/presidential")
+if pr:
+    check("presidential data covers both 2020 nominees", {"Trump", "Biden / Harris"} <= {f["candidate"] for f in pr["funding"] if f["cycle"] == 2020})
+rv = data.get("/api/revolving/overview")
+if rv:
+    check("lobbyist shares are fractions of lobbyists", all(s["with_position"] <= s["lobbyists"] and s["congress_roles"] <= s["with_position"] for s in rv["by_sector"]))
 mc = data.get("/api/moneycoverage")
 if mc:
     check("money coverage groups are present for individual gifts", any(m["source"] == "indiv" and m["grp"] == "sorted" for m in mc))

@@ -14,6 +14,7 @@ export default function TradesView({ onOpen }: { onOpen: (id: string) => void })
   if (err) return <div className="card hint">Could not load trade data ({err}). Run pipeline steps 35 and 39, then restart the server.</div>
   if (!d) return <div className="card hint">Loading…</div>
   const tot = d.sectors.reduce((a, s) => a + s.trades, 0)
+  const rate = (from: number, to: number) => { const r = d.coverage.parse_by_year.filter((y) => y.year >= from && y.year <= to); const e = r.reduce((a, y) => a + y.expected, 0); return e ? Math.round((100 * r.reduce((a, y) => a + y.parsed, 0)) / e) : 0 }
   return (
     <div className="page">
       <div className="card prose">
@@ -23,7 +24,7 @@ export default function TradesView({ onOpen }: { onOpen: (id: string) => void })
           Values are reported only as ranges (for example $15,001 to $50,000), so every total below is a low and a high figure, never one number.
         </p>
         <p className="hint">
-          House only: the Senate’s disclosure site makes every visitor accept its terms before showing anything, which this project does not do on a person’s behalf. Reports we could not read (scans, unusual layouts) and filers we could not match to one member are left out: {d.coverage.unmatched} filer names were not matched.
+          House only: the Senate’s disclosure site makes every visitor accept its terms before showing anything, which this project does not do on a person’s behalf. We read about {rate(2021, 2026)}% of the transaction lines in reports filed since 2021 and about {rate(2014, 2020)}% before that (older layouts, scans and corrupt files are the rest), so totals are a floor. {d.coverage.unmatched} filer names could not be matched to one member and are left out.
           A trade is not wrongdoing, and an index fund or a spouse’s broker may place trades the member did not choose. The question here is how often members trade in the industries whose bills they vote on and whose PACs fund them.
         </p>
         <Line series={[{ name: 'Trades reported per year', color: 'var(--s2)', pts: d.years.filter((y) => y.year >= 2014 && y.year <= 2025).map((y) => [y.year, y.trades] as [number, number]) }]} fmt={(v) => v.toFixed(0)} height={170} />
