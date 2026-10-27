@@ -48,7 +48,7 @@ def overview():
                                 FROM u.company_year WHERE kind IN {TRACKED} GROUP BY 1 ORDER BY 1""")
         money = rows(con, "SELECT year(week) AS y, source, sum(amount) AS amount FROM money_weekly WHERE sector = 'Defense & Aerospace' AND week >= DATE '2005-01-01' GROUP BY 1, 2 ORDER BY 1, 2")
     with open(ROOT_DIR / "pipeline" / "definitions" / "company_reported_share.csv", encoding="utf-8", newline="") as f:
-        reported = [dict(r, share=float(r["share"]), year=int(r["year"])) for r in csv.DictReader(f)]
+        reported = [dict(r, share=float(r["share"]), year=int(r["year"]), share_with_fms=float(r["share_with_fms"]) if r.get("share_with_fms") else None) for r in csv.DictReader(f)]
     return {"fy": fy, "companies": comp, "tracked": tracked, "member_money": money, "reported": reported}
 
 

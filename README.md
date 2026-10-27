@@ -58,7 +58,8 @@ vote are in the `source_url` column of the `vote_direction*.csv` files.
 The Defense tab answers a different question from the scoreboard: how dependent the industry is on federal contracts, what it spends on Washington, where the contract
 dollars land, how members vote next to local contracts and money, who lobbies for the companies, and what members said next to what they did. Contract totals are PRIME
 awards in obligated dollars (they omit classified awards, subcontracts and direct foreign sales); company-reported government shares are in
-`pipeline/definitions/company_reported_share.csv` with source links, and were read from search-result quotations of the filings, so check each source.
+`pipeline/definitions/company_reported_share.csv` (written by `pipeline/28_reported_shares.py`), read directly from each company's 10-K on SEC EDGAR with a link to the filing;
+definitions differ by company (some include foreign military sales), and the basis column says which.
 Statements for the said-versus-did table are in `promises.csv`, executive-branch statements and actions in `executive_record.csv`, Pentagon-to-contractor facts in `door_facts.csv`.
 
 ## Known limits

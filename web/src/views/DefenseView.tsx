@@ -72,7 +72,9 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
     return m
   }, [ov])
   const tracked = ov?.tracked ?? []
-  const rp = (company: string, year: number) => { const r = ov?.reported.find((x) => x.company === company && x.year === year); return r ? pct(r.share) : 'n/a' }
+  const pc = (x: number) => (x >= 0.995 && x < 1 ? pct(x, 1) : pct(x))
+  const rp = (company: string, year: number) => { const r = ov?.reported.find((x) => x.company === company && x.year === year); return r ? pc(r.share) : 'n/a' }
+  const rpf = (company: string, year: number) => { const r = ov?.reported.find((x) => x.company === company && x.year === year); return r?.share_with_fms != null ? pct(r.share_with_fms) : 'n/a' }
   const last = tracked.find((t) => t.year === 2025)
   const dodTotal25 = fy.get(2025)?.dod ?? 0
 
@@ -154,7 +156,7 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
                   <td style={{ textAlign: 'left' }}>{c.company}<div className="hint">{c.kind}</div></td>
                   <td>{bn(c.contracts)}</td>
                   <td>{c.revenue > 0 ? pct(c.contractsPaired / c.revenue) : '–'}</td>
-                  <td style={{ textAlign: 'left' }}>{c.rep ? <><strong>{pct(c.rep.share)}</strong> ({c.rep.year}) <a href={c.rep.source_url} target="_blank" rel="noreferrer">source</a><div className="hint">{c.rep.basis}</div></> : <span className="hint">not retrieved</span>}</td>
+                  <td style={{ textAlign: 'left' }}>{c.rep ? <><strong>{pc(c.rep.share)}</strong> ({c.rep.year}){c.rep.share_with_fms != null && <> · about <strong>{pct(c.rep.share_with_fms)}</strong> counting foreign military sales</>} <a href={c.rep.source_url} target="_blank" rel="noreferrer">10-K</a><div className="hint">{c.rep.basis}</div></> : <span className="hint">{c.company.startsWith('BAE') ? 'UK parent: no SEC annual report' : 'not in an SEC filing'}</span>}</td>
                   <td>{c.lobbying ? mn(c.lobbying) : '–'}</td><td>{c.pac ? mn(c.pac) : '–'}</td><td>{c.indiv ? mn(c.indiv) : '–'}</td>
                   <td>{c.lobbying && c.contracts ? `$${Math.round((c.lobbying / (c.contracts / 1e9)) / 1000).toLocaleString()}K` : '–'}</td>
                 </tr>
@@ -163,7 +165,9 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
           </table>
         </div>
         <div className="hint" style={{ marginTop: 8 }}>
-          Company-reported shares were read from search-result quotations of the filings, not from the filings themselves; each has a link so you can check it. Diversified companies (Boeing, RTX, GE, Honeywell, Textron) show a lower share because commercial business is counted in revenue.
+          Company-reported shares were read directly from each company’s 10-K on SEC EDGAR (fiscal years 2020 to 2026 where the filing gives them; the link goes to the filing). Where a filing gives only dollars, the share is computed from its own dollar figures.
+          The definitions differ and the basis line says which: some include foreign military sales (General Dynamics, Boeing, L3Harris, Textron), RTX excludes them, and Lockheed and Northrop report them inside an “international” line. Diversified companies (Boeing, RTX, GE, Honeywell, Textron) show a lower share because commercial business is counted in revenue.
+          The “counting FMS” figure for Lockheed is derived (its US Government sales plus the FMS percentage of international sales that the filing states) and is approximate.
         </div>
       </div>
 
@@ -171,8 +175,9 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
         <h2>Checking the numbers you’ve heard</h2>
         <h3>“Up to 90% of revenue from government contracts”</h3>
         <ul>
-          <li>For the pure defense and government-services companies, high shares are real: {rp('Northrop Grumman', 2024)} of Northrop Grumman’s 2024 sales, {rp('Booz Allen Hamilton', 2024)} of Booz Allen’s fiscal 2024 revenue, about {rp('General Dynamics', 2024)} of General Dynamics’ revenue.</li>
-          <li>It is much lower for companies with big commercial businesses: Boeing {rp('Boeing', 2024)} (including foreign military sales through the US government), RTX {rp('RTX (Raytheon / United Technologies)', 2024)} (excluding them).</li>
+          <li>For the pure defense and government-services companies, high shares are real, and these come from the companies’ own 10-Ks for 2025 (fiscal 2025): Huntington Ingalls {rp('Huntington Ingalls', 2025)}, Booz Allen {rp('Booz Allen Hamilton', 2025)}, SAIC {rp('Science Applications International (SAIC)', 2025)}, CACI {rp('CACI', 2025)}, Leidos {rp('Leidos (and SAIC before 2014)', 2025)}, Northrop Grumman {rp('Northrop Grumman', 2025)} ({rp('Northrop Grumman', 2024)} in 2024), L3Harris {rp('L3Harris (Harris / L3)', 2025)}, Lockheed Martin {rp('Lockheed Martin', 2025)}, General Dynamics {rp('General Dynamics', 2025)}.</li>
+          <li>Lockheed shows why the “foreign contracts paid by the US government” point matters. Its 10-K counts only {rp('Lockheed Martin', 2025)} of 2025 sales as US Government, but about 77% of its $21.3 billion in international sales were foreign military sales, which are contracts with and paid through the US government. Counting those brings it to about <strong>{rpf('Lockheed Martin', 2025)}</strong> (derived, approximate), which is where the “as high as 90%” figure comes from.</li>
+          <li>It is much lower for companies with big commercial businesses: Boeing {rp('Boeing', 2025)} in 2025 ({rp('Boeing', 2024)} in 2024; its defense segment alone is 91%), RTX {rp('RTX (Raytheon / United Technologies)', 2025)} (excluding foreign military sales), Textron {rp('Textron', 2025)}, Honeywell {rp('Honeywell', 2025)}, GE {rp('General Electric', 2025)}.</li>
           <li>Whether “foreign contracts paid by the US government” count matters. Sales to other countries made through the Pentagon’s Foreign Military Sales program are generally awarded as DoD contracts and so appear in the DoD totals above; direct sales from a company to a foreign government do not.</li>
           <li>So the honest answer is a range by company and definition, not one number. The table above gives each company’s figure, with its source.</li>
         </ul>
