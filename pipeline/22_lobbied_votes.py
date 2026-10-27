@@ -68,8 +68,10 @@ def main() -> None:
     cl = con.execute("""SELECT client_id, any_value(client_name) AS client_name, any_value(client_desc) AS client_desc FROM lda.lda_filings
                         WHERE client_id IS NOT NULL GROUP BY 1""").df()
     labs = []
-    for n, d in zip(cl["client_name"], cl["client_desc"]):
-        labs.append(classify(n or "") or classify(d or ""))
+    ov = pd.read_csv(ROOT / "pipeline" / "definitions" / "lobbying_client_overrides.csv")
+    ov = ov[ov["sector"].isin(KEEP)].set_index("client_id")["label"]      # hand labels for the largest clients whose names the rules missed (same ten scored sectors)
+    for cid, n, d in zip(cl["client_id"], cl["client_name"], cl["client_desc"]):
+        labs.append(ov[cid] if cid in ov.index else (classify(n or "") or classify(d or "")))
     cl["label"] = labs
     ci = cl.dropna(subset=["label"])[["client_id", "client_name", "label"]]
     con.execute("CREATE OR REPLACE TABLE lda_client_industry AS SELECT * FROM ci")

@@ -4,36 +4,13 @@ import { api } from '../api'
 import type { DefMember, DefOverview, DefReported, DefRevolving, DefState, MethodData, PromisesData, WarData } from '../types'
 import { useWidth } from '../hooks'
 import { fmtMoney } from '../util'
+import Line from '../charts/Line'
+import type { Series } from '../charts/Line'
 
 const bn = (v: number) => `$${(v / 1e9).toFixed(v >= 1e11 ? 0 : 1)}B`
 const mn = (v: number) => `$${(v / 1e6).toFixed(v >= 1e8 ? 0 : 1)}M`
 const pct = (v: number, d = 0) => `${(100 * v).toFixed(d)}%`
 const sgn = (v: number, d = 1) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}`
-
-type Series = { name: string; color: string; pts: [number, number][] }
-
-function Line({ series, fmt, height = 190 }: { series: Series[]; fmt: (v: number) => string; height?: number }) {
-  const [ref, width] = useWidth<HTMLDivElement>()
-  const M = { l: 52, r: 12, t: 10, b: 24 }
-  const xs = series.flatMap((s) => s.pts.map((p) => p[0]))
-  const ys = series.flatMap((s) => s.pts.map((p) => p[1]))
-  if (!xs.length) return <div ref={ref} className="hint">Loading…</div>
-  const x = d3.scaleLinear().domain([d3.min(xs)!, d3.max(xs)!]).range([M.l, width - M.r])
-  const y = d3.scaleLinear().domain([0, d3.max(ys)! * 1.08]).nice().range([height - M.b, M.t])
-  const line = d3.line<[number, number]>().x((p) => x(p[0])).y((p) => y(p[1]))
-  return (
-    <div ref={ref}>
-      <svg width={width} height={height} role="img" aria-label={series.map((s) => s.name).join(', ')}>
-        {y.ticks(4).map((t) => (
-          <g key={t}><line x1={M.l} x2={width - M.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" /><text x={M.l - 6} y={y(t) + 4} textAnchor="end" fontSize={11} fill="var(--ink-2)">{fmt(t)}</text></g>
-        ))}
-        {x.ticks(6).map((t) => <text key={t} x={x(t)} y={height - 6} textAnchor="middle" fontSize={11} fill="var(--ink-2)">{t}</text>)}
-        {series.map((s) => <path key={s.name} d={line(s.pts) ?? ''} fill="none" stroke={s.color} strokeWidth={2} />)}
-      </svg>
-      <div className="legend3">{series.map((s) => <span key={s.name}><i style={{ background: s.color }} /> {s.name}</span>)}</div>
-    </div>
-  )
-}
 
 function corr(a: number[], b: number[]): number {
   const n = a.length
@@ -194,14 +171,14 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
         <div className="twocol">
           <div>
             <div className="fh">Per resident, by state</div>
-            <table className="data">
+            <div className="scroll-x"><table className="data">
               <thead><tr><th style={{ textAlign: 'left' }}>State</th><th>Per resident</th><th>Total per year</th></tr></thead>
               <tbody>{states.filter((s) => s.pop > 0).slice(0, 12).map((s) => <tr key={s.state}><td style={{ textAlign: 'left' }}>{s.state}</td><td>${Math.round(s.per_capita).toLocaleString()}</td><td>{bn(s.dod)}</td></tr>)}</tbody>
-            </table>
+            </table></div>
           </div>
           <div>
             <div className="fh">Top House districts today</div>
-            <table className="data">
+            <div className="scroll-x"><table className="data">
               <thead><tr><th style={{ textAlign: 'left' }}>Member</th><th>DoD contracts per year</th><th>Defense PAC gifts, all years</th></tr></thead>
               <tbody>
                 {topDistricts.map((m) => (
@@ -211,7 +188,7 @@ export default function DefenseView({ onOpen }: { onOpen: (id: string) => void }
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <div className="hint">District totals follow the districts USAspending reports today and are approximate.</div>
           </div>
         </div>

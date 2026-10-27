@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import type { CommitteeRow2, Definitions, PlaceboRow, Scored, TimingRow } from '../types'
 import { useWidth } from '../hooks'
-import AboutView from './AboutView'
 
 export default function MethodView({ defs }: { defs: Definitions }) {
   const [timing, setTiming] = useState<TimingRow[]>([])
@@ -23,13 +22,14 @@ export default function MethodView({ defs }: { defs: Definitions }) {
     <div className="page">
       <div className="card prose">
         <h2>What we found so far</h2>
-        <p className="hint">Based on a pilot set of coded votes; every number here will move as more votes are added.</p>
+        <p className="hint">These numbers are recomputed from the data each time the pipeline runs; the vote lists behind them are in the <a href="#/codebook">vote codebook</a>.</p>
 
-        <h3>1. Party explains most of it</h3>
+        <h3>1. Party and donors move together</h3>
         <p>
           Among ranked members, the average share of funded votes cast the donors’ way is{' '}
           <strong>{mean('R') != null ? `${mean('R')!.toFixed(0)}%` : '–'} for Republicans</strong> and <strong>{mean('D') != null ? `${mean('D')!.toFixed(0)}%` : '–'} for Democrats</strong>.
-          So “voted with donors” mostly means “voted with their party,” which is why the ranking compares each member with same-party colleagues on the same votes.
+          So “voted with donors” on its own mostly tracks which party a member belongs to, and the same industries often fund the party whose positions they gain from.
+          That is why the member lists compare each member with same-party colleagues on the same votes. That comparison shows who goes further than their party’s line; it cannot show whether the party’s line itself was bought.
         </p>
 
         <h3>2. Money after the vote predicts as well as money before it</h3>
@@ -101,7 +101,7 @@ export default function MethodView({ defs }: { defs: Definitions }) {
           <li>The “donors’ side” of each vote comes from a cited trade-group position, listed below. Anything we could not source was left out.</li>
         </ul>
       </div>
-      <AboutView defs={defs} />
+      <div className="card hint">Definitions, data sources and how recent each is are on the <a href="#/about">Sources page</a>; the full list of votes with a documented industry side is in the <a href="#/codebook">vote codebook</a>.</div>
     </div>
   )
 }

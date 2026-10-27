@@ -259,7 +259,7 @@ export default function MemberView({ id, defs }: { id: string; defs: Definitions
           <span><i className="ring" style={{ borderColor: 'var(--muted)' }} />Not a party-line vote</span>
           <span><i className="ring" />Ringed: model gave this vote under 25%</span>
         </div>
-        {noMapping && <div className="note-box" style={{ marginBottom: 6 }}>No bill topics are tied to this sector yet, so the topic filter shows nothing. Lobbying records (still downloading) will add them.</div>}
+        {noMapping && <div className="note-box" style={{ marginBottom: 6 }}>No bill topics are tied to this sector yet, so the topic filter shows nothing. For sectors without a topic list, the lobbied-votes view on the front page uses lobbying filings instead.</div>}
         <VoteStrip votes={shownVotes} x={x} width={width - 34} congresses={congresses} />
         {vf.startsWith('relevant') && <div className="note-box" style={{ marginTop: 8 }}>Votes are tied to the sector by bill topic only. This does not show whether Yea helped or hurt the sector, and nothing on this page shows that money caused a vote.</div>}
       </div>
@@ -321,29 +321,34 @@ function MoneyTable({ buckets, series }: { buckets: Bucket[]; series: Series[] }
 }
 
 export function ConstituentsCard({ rows }: { rows: Constituent[] }) {
+  const [all, setAll] = useState(false)
   const direct = rows.filter((r) => r.match === 'direct')
-  const conf = direct.filter((r) => r.with_district != null)
-  const against = conf.filter((r) => r.with_district === 0).length
+  const proxy = rows.filter((r) => r.match === 'proxy')
+  const clear = (x: Constituent[]) => x.filter((r) => r.with_district != null)
+  const count = (x: Constituent[]) => ({ n: clear(x).length, against: clear(x).filter((r) => r.with_district === 0).length })
+  const d = count(direct), p = count(proxy)
   const verdict = (r: Constituent) =>
     r.with_district == null ? (r.district_view === 'unknown' ? 'No estimate' : 'District split / unclear') : r.with_district === 1 ? 'With district' : 'Against district'
+  const basis = (r: Constituent) => (r.match === 'direct' ? 'Survey asked about this issue' : r.match === 'proxy' ? 'Climate-opinion stand-in' : 'Related question')
+  const shown = all ? rows : rows.slice(0, 12)
   return (
     <div className="card">
-      <h2>Landmark votes vs. what the district wanted</h2>
+      <h2>Votes vs. what the district wanted</h2>
       <div className="sub">
-        {conf.length > 0
-          ? `Against the district’s majority on ${against} of ${conf.length} landmark votes where the majority was clear (direct matches only).`
-          : 'No landmark vote here has a clear district majority.'}{' '}
+        {d.n > 0 ? <>On <strong>{direct.length}</strong> landmark votes where the survey asked about the issue itself, the district’s majority was clear on <strong>{d.n}</strong> and the member went <strong>against</strong> it on <strong>{d.against}</strong>. </> : direct.length > 0 ? 'On the landmark votes where the survey asked about the issue itself, no district majority was clear enough to call. ' : 'No landmark vote with a direct survey question covers this member. '}
+        {proxy.length > 0 ? <>On <strong>{proxy.length}</strong> fossil-fuel votes judged by one stand-in question (letting the EPA regulate CO2), the district’s view was clear on <strong>{p.n}</strong> and the member went against it on <strong>{p.against}</strong>; that is a looser measure. </> : null}
         A vote counts as “against” only if we are at least 90% sure which way the district leaned.
       </div>
       <div className="scroll-x">
         <table className="data">
-          <thead><tr><th>Date</th><th style={{ textAlign: 'left' }}>Vote</th><th style={{ textAlign: 'left' }}>Voters were asked</th><th>Member</th><th>{'District / state support'}</th><th>Result</th></tr></thead>
+          <thead><tr><th>Date</th><th style={{ textAlign: 'left' }}>Vote</th><th style={{ textAlign: 'left' }}>Voters were asked</th><th style={{ textAlign: 'left' }}>Basis</th><th>Member</th><th>{'District / state support'}</th><th>Result</th></tr></thead>
           <tbody>
-            {rows.map((r) => (
+            {shown.map((r) => (
               <tr key={`${r.congress}-${r.chamber}-${r.rn}`} style={r.match === 'related' ? { opacity: 0.65 } : undefined}>
                 <td>{r.d}</td>
-                <td style={{ textAlign: 'left' }}>{r.bill} · {r.note.length > 70 ? `${r.note.slice(0, 68)}…` : r.note}{r.match === 'related' ? ' (related, not identical)' : ''}</td>
+                <td style={{ textAlign: 'left' }}>{r.bill} · {r.note.length > 70 ? `${r.note.slice(0, 68)}…` : r.note}</td>
                 <td style={{ textAlign: 'left' }}>{ITEM_LABEL[r.item] ?? r.item}</td>
+                <td style={{ textAlign: 'left' }} className="hint">{basis(r)}</td>
                 <td>{r.voted_for_item === 1 ? 'For' : 'Against'}</td>
                 <td>{r.est == null ? '–' : `${Math.round(r.est * 100)}% ± ${Math.round((r.sd ?? 0) * 164)}`}</td>
                 <td className={r.with_district === 0 ? 'warn' : undefined} style={r.with_district === 0 ? { fontWeight: 600 } : undefined}>{verdict(r)}</td>
@@ -352,6 +357,7 @@ export function ConstituentsCard({ rows }: { rows: Constituent[] }) {
           </tbody>
         </table>
       </div>
+      {rows.length > 12 && <button className="iconbtn" style={{ marginTop: 8 }} onClick={() => setAll((v) => !v)}>{all ? 'Show fewer' : `Show all ${rows.length}`}</button>}
       <div className="hint" style={{ marginTop: 8 }}>
         “For/Against” is the member’s position on the question voters were asked, which can be the opposite of Yea/Nay (for example, voting Yea to block the EPA is “Against” letting it regulate CO2). Support is a survey estimate pooled with the district’s presidential vote and ideology; ± is a 90% range. Most of these gaps are party-wide patterns and say nothing yet about donors.
       </div>
@@ -369,12 +375,13 @@ function DonorTile({ rows }: { rows: DonorVote[] }) {
     <div className="tile">
       <div className="lbl">Voted the donors’ way</div>
       <div className="val">{n >= 3 ? `${a} of ${n}` : '–'}</div>
-      <div className="note">{n >= 3 ? `votes on sectors that gave $10K+ in the prior 6 years (pilot set of coded votes)` : rows.length ? 'too few coded votes with sector money' : 'no coded votes for this member yet'}</div>
+      <div className="note">{n >= 3 ? `votes on sectors that gave $10K+ in the prior 6 years (documented-side votes)` : rows.length ? 'too few coded votes with sector money' : 'no coded votes for this member yet'}</div>
     </div>
   )
 }
 
 export function DonorVotesCard({ rows }: { rows: DonorVote[] }) {
+  const [all, setAll] = useState(false)
   const funded = rows.filter((r) => r.pac_6y >= MONEY_FLOOR)
   const unfunded = rows.filter((r) => r.pac_6y < MONEY_FLOOR)
   const sh = (x: DonorVote[]) => (x.length ? `${x.filter((r) => r.aligned === 1).length} of ${x.length}` : '–')
@@ -383,7 +390,7 @@ export function DonorVotesCard({ rows }: { rows: DonorVote[] }) {
       <h2>Votes on the donors’ issues</h2>
       <div className="sub">
         Voted the donors’ way on {sh(funded)} votes where that sector had given $10K or more in the six years before{unfunded.length ? `, and on ${sh(unfunded)} where it had given less` : ''}.
-        Each vote’s “helps” side comes from a cited trade-group position. Only a pilot set of votes is coded so far.
+        Each vote’s “helps” side comes from a cited source (see the <a href="#/codebook">vote codebook</a>). A vote that matters to two industries, such as oil and coal, appears once for each.
       </div>
       <div className="scroll-x">
         <table className="data">
@@ -392,7 +399,7 @@ export function DonorVotesCard({ rows }: { rows: DonorVote[] }) {
             <th>Result</th><th>Sector PAC $ (6 yrs before)</th><th>District</th>
           </tr></thead>
           <tbody>
-            {rows.map((r) => (
+            {(all ? rows : rows.slice(0, 25)).map((r) => (
               <tr key={`${r.congress}-${r.chamber}-${r.rn}-${r.sector}-${r.subsector}`} title={r.evidence}>
                 <td>{r.d}</td>
                 <td style={{ textAlign: 'left' }}>{r.bill} · {(r.desc || r.q || '').slice(0, 64)}</td>
@@ -407,8 +414,9 @@ export function DonorVotesCard({ rows }: { rows: DonorVote[] }) {
           </tbody>
         </table>
       </div>
+      {rows.length > 25 && <button className="iconbtn" style={{ marginTop: 8 }} onClick={() => setAll((v) => !v)}>{all ? 'Show fewer' : `Show all ${rows.length}`}</button>}
       <div className="hint" style={{ marginTop: 8 }}>
-        Hover a row for the evidence behind the donors’ side; sources are listed on the About page. Sector money is direct PAC gifts. A member who votes with donors and also with their party may simply be doing what their party does; that is why the tests compare members of the same party on the same vote.
+        Hover a row for the evidence behind the donors’ side; every source is in the vote codebook. Sector money is direct PAC gifts. A member who votes with donors and also with their party may simply be doing what their party does; that is why the tests compare members of the same party on the same vote.
       </div>
     </div>
   )

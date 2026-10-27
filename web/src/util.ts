@@ -57,3 +57,22 @@ export function liftRange(lift: number | null, se: number | null): string {
   const f = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(0)}`
   return se == null ? `${f(lift)} pts` : `${f(lift)} pts (${f(lift - 1.64 * se)} to ${f(lift + 1.64 * se)})`
 }
+
+/** One display name per industry label, used everywhere (the stored labels mix 'oil gas', 'Labor' and 'banks'). */
+const INDUSTRY_NAME: Record<string, string> = {
+  Labor: 'Labor unions', 'oil gas': 'Oil and gas', 'coal mining': 'Coal mining', 'electric utilities': 'Electric utilities',
+  'physicians clinicians': 'Physicians and clinicians', banks: 'Banks', insurance: 'Insurance', pharma: 'Pharma',
+}
+export const industryName = (l: string): string => INDUSTRY_NAME[l] ?? l.replace(/^./, (c) => c.toUpperCase())
+
+/** "Rep. Ellzey" / "Sen. Cassidy": last name without suffixes, with the chamber's title. */
+export function shortName(name: string, chamber: string): string {
+  const clean = name.replace(/,?\s+(Jr\.?|Sr\.?|II|III|IV)$/i, '').trim()
+  return `${chamber === 'Senate' ? 'Sen.' : 'Rep.'} ${clean.split(/\s+/).slice(-1)[0]}`
+}
+
+/** Fix the stored lowercase labels inside free text such as "oil gas $38K, banks $40K". */
+export const tidyLabels = (t: string | null | undefined): string => (t ?? '').replace(/(oil gas|coal mining|electric utilities|physicians clinicians|banks|insurance|pharma)/g, (m) => industryName(m))
+
+/** Money categories that are not an industry with an interest of its own. */
+export const NOT_INDUSTRY = ['Candidate committee', 'Leadership PAC', 'Ideological / Single-Issue / Unsorted', 'Business (sector not yet assigned)']

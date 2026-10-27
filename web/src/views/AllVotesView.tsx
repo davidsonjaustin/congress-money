@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import type { AllVotesSummary, TopVotes } from '../types'
+import { NOT_INDUSTRY, industryName } from '../util'
 
 const pct = (v: number | null | undefined, d = 1) => (v == null ? '–' : `${(100 * v).toFixed(d)}%`)
-const NOT_INDUSTRY = ['Candidate committee', 'Leadership PAC', 'Ideological / Single-Issue / Unsorted', 'Business (sector not yet assigned)']
 const DOSE: Record<string, string> = { '1': 'Under $1K', '2': '$1K to $10K', '3': '$10K to $50K', '4': '$50K to $200K', '5': '$200K or more' }
-const NAMES: Record<string, string> = { Labor: 'Labor unions', 'oil gas': 'Oil and gas', 'coal mining': 'Coal mining', 'electric utilities': 'Electric utilities', 'physicians clinicians': 'Physicians and clinicians' }
-const nice = (l: string) => NAMES[l] ?? l.replace(/^./, (c) => c.toUpperCase())
+const nice = industryName
 
 export default function AllVotesView() {
   const [sum, setSum] = useState<AllVotesSummary | null>(null)
   const [label, setLabel] = useState('oil gas')
   const [top, setTop] = useState<TopVotes | null>(null)
   const [limit, setLimit] = useState(25)
+  const [scope, setScope] = useState<'linked' | 'all'>('linked')
 
   useEffect(() => { api.allVotesSummary().then(setSum).catch(() => undefined) }, [])
-  useEffect(() => { setTop(null); api.allVotesTop(label, 3.13, limit).then(setTop).catch(() => undefined) }, [label, limit])
+  useEffect(() => { setTop(null); api.allVotesTop(label, 3.13, limit, scope).then(setTop).catch(() => undefined) }, [label, limit, scope])
 
   const industries = useMemo(() => (sum ? sum.industries.filter((r) => !NOT_INDUSTRY.includes(r.label)).sort((a, b) => (b.link_before ?? 0) - (a.link_before ?? 0)) : []), [sum])
   const lead = industries.filter((r) => (r.link_before ?? 0) - (r.link_after ?? 0) >= 0.01)
@@ -119,8 +119,12 @@ export default function AllVotesView() {
       <div className="card">
         <h2>Votes where an industry’s money lines up most strongly</h2>
         <div className="sub">
-          Strongest links stronger than 99.9% of what random money produces. “Money pulls toward” shows which way members with more of the industry’s money voted. Votes we have already coded with an
-          industry side show it in the last column.
+          Links stronger than 99.9% of what random money produces. “Money pulls toward” shows which way members with more of the industry’s money voted.
+          By default we list only votes with a reason to think the industry cared: it lobbied the bill, or its side is already documented. Procedural votes (rules, the Journal, adjournments, nominations) are always set aside here.
+        </div>
+        <div className="seg" style={{ marginBottom: 8 }}>
+          <button aria-pressed={scope === 'linked'} onClick={() => { setScope('linked'); setLimit(25) }}>Votes with an industry link</button>
+          <button aria-pressed={scope === 'all'} onClick={() => { setScope('all'); setLimit(25) }}>Every strong link, including unexplained ones</button>
         </div>
         <div className="pills" style={{ marginBottom: 8 }}>
           {['', ...industries.map((r) => r.label)].map((l) => (
@@ -139,22 +143,22 @@ export default function AllVotesView() {
                   <td style={{ textAlign: 'left', whiteSpace: 'nowrap' }}>{r.d}<div className="hint">{r.chamber}</div></td>
                   <td style={{ textAlign: 'left', maxWidth: 420 }}>
                     <div>{(r.title || r.descr || r.q || '').slice(0, 150)}</div>
-                    <div className="hint">{r.bill ? `${r.bill} · ` : ''}{r.q ?? ''}</div>
+                    <div className="hint">{r.bill ? `${r.bill} · ` : ''}{r.q ?? ''}{r.text ? ` · ${r.text}` : ''}</div>
                   </td>
                   <td style={{ textAlign: 'left' }}>{nice(r.label)}</td>
                   <td>{r.result ?? ''}<div className="hint">{r.yeas}–{r.nays}</div></td>
                   <td style={{ textAlign: 'left' }}>{r.b_only >= 0 ? 'Yea' : 'Nay'}</td>
                   <td>{Math.abs(r.t_only).toFixed(1)}</td>
                   <td>{r.t_after == null ? '–' : Math.abs(r.t_after).toFixed(1)}</td>
-                  <td style={{ textAlign: 'left' }}>{r.coded_side ? `${r.coded_side}${(r.b_only >= 0) === (r.coded_side === 'Yea') ? ' ✓' : ' ✗'}` : '–'}</td>
+                  <td style={{ textAlign: 'left' }}>{r.coded_side ? `${r.coded_side}${(r.b_only >= 0) === (r.coded_side === 'Yea') ? ' ✓' : ' ✗'}` : '–'}{r.lobbied ? <div className="hint">industry lobbied this</div> : r.procedural ? <div className="hint">procedural</div> : !r.coded_side ? <div className="hint">no known industry link</div> : null}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         {!top && <div className="hint">Loading…</div>}
-        {top && <div className="hint" style={{ marginTop: 6 }}>Some strong links sit on votes with no obvious industry stake (a resolution on Syria, a congressional adjournment). That means part of any link comes from things the model cannot see, such as how leadership and committee members vote. Treat each row as a lead to check, not a finding. </div>}
-        {top && <div className="hint" style={{ marginTop: 6 }}>{top.rows.length} of {top.total.toLocaleString()} strong links shown. Strength is how many standard errors the link is from zero (about 3.1 is the line random money almost never crosses).</div>}
+        {top && scope === 'all' && <div className="hint" style={{ marginTop: 6 }}>Rows marked “no known industry link” or “procedural” are statistical hits with no plausible industry stake. They show that part of any link comes from things the model cannot see, such as how leadership and committee members vote. Treat each row as a lead to check, not a finding.</div>}
+        {top && <div className="hint" style={{ marginTop: 6 }}>{top.rows.length} of {top.total.toLocaleString()} strong links shown{scope === 'linked' ? ` (${(top.total_all - top.total_linked).toLocaleString()} more have no industry link or are procedural)` : ''}. Strength is how many standard errors the link is from zero (about 3.1 is the line random money almost never crosses).</div>}
         {top && top.rows.length < top.total && <button className="iconbtn" style={{ marginTop: 8 }} onClick={() => setLimit(limit + 50)}>Show 50 more</button>}
       </div>
     </div>

@@ -1,6 +1,6 @@
 export type MemberRow = {
   id: string; name: string; party: 'D' | 'R' | 'I'; state: string; chamber: 'House' | 'Senate'
-  first_congress: number; last_congress: number; chambers: string[]; money: number
+  first_congress: number; last_congress: number; chambers: string[]; money: number; district: number | null
 }
 export type Term = {
   congress: number; chamber: string; state: string; district: number; party_code: number; nominate_dim1: number | null
@@ -25,7 +25,7 @@ export type Definitions = {
 export type LeaderRow = { id: string; name: string; party: string; state: string; chamber: string; amount: number }
 export type Constituent = {
   d: string; congress: number; chamber: string; rn: number; state: string; district: number; bill: string; note: string; item: string
-  match: 'direct' | 'related'; yea: number; voted_for_item: number; est: number | null; sd: number | null; p_support: number | null
+  match: 'direct' | 'proxy' | 'related'; yea: number; voted_for_item: number; est: number | null; sd: number | null; p_support: number | null
   district_view: 'supports' | 'opposes' | 'uncertain' | 'unknown'; with_district: number | null; n_resp: number | null
 }
 export type DonorVote = {
@@ -43,7 +43,7 @@ export type Scored = {
   donors_over_district: number | null; district_over_donors: number | null
   donor_district_votes?: number | null; proxy_donors_over?: number | null; proxy_district_over?: number | null; proxy_votes?: number | null; fossil_const_votes?: number | null; fossil_const_against?: number | null
 }
-export type Coverage = { coded_votes: number; roll_calls: number; bill_votes: number; ranked_members: number; landmark_votes: number; votes_since_2008: number; coded_since_2008: number }
+export type Coverage = { coded_votes: number; roll_calls: number; bill_votes: number; ranked_members: number; landmark_votes: number; votes_since_2008: number; coded_since_2008: number; coded_by_label: Record<string, number>; landmark_by_match: Record<string, number>; lobbied_through: string | null }
 export type SectorOption = { label: string; votes: number; members_ranked: number }
 export type Scoreboard = { members: Scored[]; coverage: Coverage; sectors: SectorOption[] }
 export type TimingRow = { group: string; spec: string; term: string; effect_pts: number; se_pts: number; n: number }
@@ -58,9 +58,9 @@ export type AllVotesIndustry = { label: string; votes: number; strong_only: numb
 export type AllVotesSummary = { thresholds: { only: number; joint_b: number; joint_a: number }; industries: AllVotesIndustry[]; tested: number; all_votes: number; validation: { tier: string; n: number; agree: number }[]; funded: { label: string; votes: number; member_votes: number; aligned: number; expected: number }[]; dose: { k: string; member_votes: number; aligned: number; expected: number }[] }
 export type TopVote = {
   congress: number; chamber: string; rollnumber: number; d: string; label: string; n: number; b_only: number; t_only: number; t_before: number | null; t_after: number | null
-  q: string | null; descr: string | null; title: string | null; bill: string | null; policy_area: string | null; result: string | null; yeas: number | null; nays: number | null; coded_side: 'Yea' | 'Nay' | null
+  q: string | null; descr: string | null; title: string | null; bill: string | null; policy_area: string | null; result: string | null; yeas: number | null; nays: number | null; coded_side: 'Yea' | 'Nay' | null; lobbied: boolean; procedural: boolean; text?: string | null
 }
-export type TopVotes = { rows: TopVote[]; total: number }
+export type TopVotes = { rows: TopVote[]; total: number; total_all: number; total_linked: number }
 export type InferredLine = { label: string; votes_coded: number; weight: number; n_funded: number; n_funded_aligned: number; expected: number; lift: number; se: number | null; z: number | null; money: number }
 export type InferredVote = { d: string | null; congress: number; chamber: string; rollnumber: number; label: string; aligned: number; p_exp: number; pac_6y: number; pull_yea: number; t_only: number; bill: string | null; q: string | null; descr: string | null; result: string | null }
 export type MemberInferred = { summary: InferredLine[]; with_money: InferredVote[]; against_money: InferredVote[] }
@@ -91,3 +91,10 @@ export type PromiseItem = {
 }
 export type ExecItem = { date: string; kind: 'said' | 'did'; text: string; source_name: string; source_url: string }
 export type PromisesData = { items: PromiseItem[]; executive: ExecItem[] }
+export type FreshRow = { source: string; through: string | null; note: string }
+export type LobYear = { sector: string; year: number; spend: number; clients: number }
+export type LobMoney = { sector: string; year: number; lobbying: number | null; pac: number | null; indiv: number | null; contracts: number | null }
+export type LobClient = { sector: string; client_id: number; name: string; label: string; spend: number; recent: number | null }
+export type LobOverview = { years: LobYear[]; money: LobMoney[]; coverage: { year: number; labelled: number; unlabelled: number }[]; top_clients: Record<string, LobClient[]> }
+export type LobBill = { bill: string; congress: number; title: string | null; became_law: boolean | null; clients: number; filings: number; house_vote: string | null; senate_vote: string | null }
+export type LobSector = { issues: { code: string; name: string; filings: number }[]; bills: LobBill[]; series: { name: string; year: number; spend: number }[] }

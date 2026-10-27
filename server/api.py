@@ -89,14 +89,14 @@ def members():
         out = rows(con, f"""
             WITH t AS (
               SELECT bioguide_id, arg_max(bioname, congress) bioname, arg_max(party_code, congress) party_code,
-                     arg_max(state, congress) state, arg_max(chamber, congress) chamber,
+                     arg_max(state, congress) state, arg_max(chamber, congress) chamber, arg_max(district, congress) district,
                      min(congress) first_congress, max(congress) last_congress, list(DISTINCT chamber) chambers
               FROM c.member_terms WHERE state NOT IN {DELEGATES} AND bioguide_id IS NOT NULL GROUP BY 1),
             x AS (SELECT bioguide, any_value(full_name) full_name FROM c.id_crosswalk GROUP BY 1),
             m AS (SELECT bioguide, sum(amount) FILTER (WHERE source IN ('pac_direct','indiv')) money FROM money_weekly GROUP BY 1)
             SELECT t.bioguide_id AS id, coalesce(x.full_name, t.bioname) AS name,
                    CASE t.party_code WHEN 100 THEN 'D' WHEN 200 THEN 'R' ELSE 'I' END AS party, t.state, t.chamber,
-                   t.first_congress, t.last_congress, t.chambers, coalesce(m.money, 0) AS money
+                   t.first_congress, t.last_congress, t.chambers, t.district, coalesce(m.money, 0) AS money
             FROM t LEFT JOIN x ON x.bioguide = t.bioguide_id LEFT JOIN m ON m.bioguide = t.bioguide_id
             ORDER BY t.last_congress DESC, name""")
     return out
@@ -162,11 +162,12 @@ def member_votes(bg: str):
         return rows(con, """
             SELECT strftime(r.vote_date, '%Y-%m-%d') AS d, v.congress, v.chamber, v.rollnumber AS rn,
                    CASE v.yea WHEN 1 THEN 'Y' ELSE 'N' END AS vote, round(v.p_cast, 3) AS p, v.unity, v.defect,
-                   v.party_maj_yea AS pm, r.vote_question AS q, left(r.vote_desc, 140) AS desc,
+                   v.party_maj_yea AS pm, r.vote_question AS q, coalesce(left(r.vote_desc, 140), left(vl.label, 140)) AS desc,
                    t.policy_area AS pa, left(t.title, 140) AS title, t.bill_number AS bill, r.vote_result AS result
             FROM member_vote v
             JOIN c.rollcalls r ON r.congress = v.congress AND r.chamber = v.chamber AND r.rollnumber = v.rollnumber
             LEFT JOIN rollcall_topic t ON t.congress = v.congress AND t.chamber = v.chamber AND t.rollnumber = v.rollnumber
+            LEFT JOIN vote_label vl ON vl.congress = v.congress AND vl.chamber = v.chamber AND vl.rollnumber = v.rollnumber
             WHERE v.bioguide = ? ORDER BY r.vote_date, v.rollnumber""", [bg])
 
 
@@ -203,7 +204,43 @@ def scoreboard(variant: str = "all", sector: str = "All business"):
                                   (SELECT count(DISTINCT (congress, chamber, rollnumber)) FROM vote_direction WHERE date >= DATE '2008-01-01') AS coded_since_2008""")[0]
         mine = next((x for x in sectors if x["label"] == sector), {"votes": 0, "members_ranked": 0})
         cov.update({"coded_votes": mine["votes"], "ranked_members": mine["members_ranked"]})
+        cov["coded_by_label"] = {r["label"]: r["n"] for r in rows(con, f"""SELECT {LABEL_SQL} AS label, count(DISTINCT (d.congress, d.chamber, d.rollnumber)) AS n
+                                                                              FROM vote_direction d WHERE d.date >= DATE '2008-01-01' GROUP BY 1 ORDER BY n DESC""")}
+        cov["landmark_by_match"] = {r["match"]: r["n"] for r in rows(con, "SELECT match, count(DISTINCT (congress, chamber, rollnumber)) AS n FROM vote_vs_district GROUP BY 1")}
+        cov["lobbied_through"] = rows(con, "SELECT strftime(max(r.vote_date), '%Y-%m-%d') AS d FROM lobbied_votes l JOIN c.rollcalls r USING (congress, chamber, rollnumber)")[0]["d"]
     return {"members": members, "coverage": cov, "sectors": sectors}
+
+
+_fresh = {}
+
+
+@app.get("/api/freshness")
+def freshness():
+    """How recent each source is. Slow ones (lobbying, contracts) are read once and kept."""
+    with db() as con:
+        votes = rows(con, "SELECT strftime(max(vote_date), '%Y-%m-%d') AS d, count(*) AS n FROM c.rollcalls")[0]
+        money = rows(con, "SELECT source, strftime(max(week) FILTER (WHERE amount <> 0 AND week <= current_date), '%Y-%m-%d') AS d FROM money_weekly GROUP BY 1")
+    if "lda" not in _fresh:
+        try:
+            with duckdb.connect(str(DATA / "lda.duckdb"), read_only=True) as l:
+                _fresh["lda"] = l.execute("SELECT strftime(max(posted), '%Y-%m-%d') FROM lda_filings").fetchone()[0]
+        except Exception:  # noqa: BLE001
+            _fresh["lda"] = None
+    if "usa" not in _fresh:
+        try:
+            with duckdb.connect(str(DATA / "usaspending.duckdb"), read_only=True) as u:
+                _fresh["usa"] = int(u.execute("SELECT max(fy) FROM usa_state").fetchone()[0])
+        except Exception:  # noqa: BLE001
+            _fresh["usa"] = None
+    src = {m["source"]: m["d"] for m in money}
+    return {"sources": [
+        {"source": "Roll-call votes (Voteview, House Clerk)", "through": votes["d"], "note": f"{votes['n']:,} roll calls since 2005"},
+        {"source": "PAC gifts to members (FEC)", "through": src.get("pac_direct"), "note": "dates are transaction dates; late reports can still add earlier gifts"},
+        {"source": "Itemized individual gifts (FEC)", "through": src.get("indiv"), "note": "gifts over $200 per cycle only; small-dollar money is not public"},
+        {"source": "Outside spending (FEC)", "through": src.get("ie_support"), "note": "independent expenditures for and against members"},
+        {"source": "Lobbying disclosures (Senate LDA)", "through": _fresh["lda"], "note": "filings posted through this date"},
+        {"source": "Federal contracts (USAspending)", "through": f"fiscal {_fresh['usa']}" if _fresh["usa"] else None, "note": "prime awards; latest complete fiscal year"},
+    ]}
 
 
 @app.get("/api/method")
@@ -245,20 +282,45 @@ def allvotes_summary():
     return {"thresholds": thr, "industries": per, "tested": tested, "all_votes": total, "validation": val, "funded": funded, "dose": dose}
 
 
+PROCEDURAL_SQL = """(t.bill_number SIMILAR TO '(HRES|PN)[0-9]+' OR t.vote_question ILIKE '%Journal%' OR t.vote_question ILIKE '%Adjourn%' OR t.vote_question ILIKE '%Previous Question%'
+                     OR t.vote_question ILIKE '%Table%' OR t.vote_question ILIKE '%Reconsider%' OR t.vote_question ILIKE '%Quorum%' OR t.vote_question ILIKE '%Nomination%')"""
+def lobbied_sql(a: str) -> str:
+    return f"EXISTS (SELECT 1 FROM lobbied_votes l WHERE l.congress = {a}.congress AND l.chamber = {a}.chamber AND l.rollnumber = {a}.rollnumber AND l.label = {a}.label)"
+
+
+def coded_sql(a: str) -> str:
+    return f"EXISTS (SELECT 1 FROM vote_direction d WHERE d.congress = {a}.congress AND d.chamber = {a}.chamber AND d.rollnumber = {a}.rollnumber AND " + LABEL_SQL + f" = {a}.label)"
+
+
+LOBBIED_SQL, CODED_SQL = lobbied_sql("m"), coded_sql("m")
+
+
 @app.get("/api/allvotes/top")
-def allvotes_top(label: str = "", min_t: float = 3.15, limit: int = 60, offset: int = 0):
-    """Roll calls where an industry's pre-vote PAC money predicts the vote most strongly, with what the vote was."""
+def allvotes_top(label: str = "", min_t: float = 3.15, limit: int = 60, offset: int = 0, scope: str = "linked"):
+    """Roll calls where an industry's pre-vote PAC money predicts the vote most strongly, with what the vote was.
+    scope 'linked' (default) keeps votes that are not procedural and that either the industry lobbied or have a documented industry side; 'all' keeps every strong link."""
+    if scope not in ("linked", "all"):
+        raise HTTPException(400, "scope")
+    where = "(? = '' OR m.label = ?) AND abs(m.t_only) >= ?"
+    if scope == "linked":
+        where += f" AND NOT coalesce({PROCEDURAL_SQL}, false) AND ({LOBBIED_SQL} OR {CODED_SQL})"
     with db() as con:
         r = rows(con, f"""
             SELECT m.congress, m.chamber, m.rollnumber, strftime(m.vdate, '%Y-%m-%d') AS d, m.label, m.n,
                    round(m.b_only, 2) AS b_only, round(m.t_only, 2) AS t_only, round(m.t_before, 2) AS t_before, round(m.t_after, 2) AS t_after,
-                   t.vote_question AS q, t.vote_desc AS descr, t.title, t.bill_number AS bill, t.policy_area, t.vote_result AS result, t.yea_count AS yeas, t.nay_count AS nays,
-                   (SELECT any_value(d.helps_vote) FROM vote_direction d WHERE d.congress = m.congress AND d.chamber = m.chamber AND d.rollnumber = m.rollnumber AND {LABEL_SQL} = m.label) AS coded_side
+                   t.vote_question AS q, t.vote_desc AS descr, t.title, t.bill_number AS bill, t.policy_area, t.vote_result AS result, t.yea_count AS yeas, t.nay_count AS nays, vl.label AS text,
+                   (SELECT any_value(d.helps_vote) FROM vote_direction d WHERE d.congress = m.congress AND d.chamber = m.chamber AND d.rollnumber = m.rollnumber AND {LABEL_SQL} = m.label) AS coded_side,
+                   {LOBBIED_SQL} AS lobbied, coalesce({PROCEDURAL_SQL}, false) AS procedural
             FROM all_vote_money m LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber)
-            WHERE (? = '' OR m.label = ?) AND abs(m.t_only) >= ?
+                 LEFT JOIN vote_label vl ON vl.congress = m.congress AND vl.chamber = m.chamber AND vl.rollnumber = m.rollnumber
+            WHERE {where}
             ORDER BY abs(m.t_only) DESC LIMIT ? OFFSET ?""", [label, label, min_t, limit, offset])
-        n = rows(con, "SELECT count(*) AS n FROM all_vote_money WHERE (? = '' OR label = ?) AND abs(t_only) >= ?", [label, label, min_t])[0]["n"]
-    return {"rows": r, "total": n}
+        counts = rows(con, f"""
+            SELECT count(*) AS total_all,
+                   count(*) FILTER (WHERE NOT coalesce({PROCEDURAL_SQL}, false) AND ({LOBBIED_SQL} OR {CODED_SQL})) AS total_linked
+            FROM all_vote_money m LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber)
+            WHERE (? = '' OR m.label = ?) AND abs(m.t_only) >= ?""", [label, label, min_t])[0]
+    return {"rows": r, "total": counts["total_linked"] if scope == "linked" else counts["total_all"], "total_all": counts["total_all"], "total_linked": counts["total_linked"]}
 
 
 @app.get("/api/member/{bg}/inferred")
@@ -267,9 +329,11 @@ def member_inferred(bg: str):
     with db() as con:
         summ = rows(con, """SELECT sector_label AS label, votes_coded, weight, n_funded, n_funded_aligned, peers_funded_aligned AS expected, lift, se, z, money_at_stake AS money
                             FROM scores WHERE variant = 'inferred' AND bioguide = ? ORDER BY (sector_label = 'All business') DESC, money_at_stake DESC""", [bg])
-        base = """SELECT strftime(t.vote_date, '%Y-%m-%d') AS d, a.congress, a.chamber, a.rollnumber, a.label, a.aligned, round(a.p_exp, 2) AS p_exp, a.pac_6y, a.pull_yea,
-                         round(a.t_only, 1) AS t_only, t.bill_number AS bill, t.vote_question AS q, coalesce(t.title, t.vote_desc) AS descr, t.vote_result AS result
-                  FROM inferred_alignment a LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber) WHERE a.bioguide = ? AND a.pac_6y >= 25000"""
+        base = ("""SELECT strftime(t.vote_date, '%Y-%m-%d') AS d, a.congress, a.chamber, a.rollnumber, a.label, a.aligned, round(a.p_exp, 2) AS p_exp, a.pac_6y, a.pull_yea,
+                         round(a.t_only, 1) AS t_only, t.bill_number AS bill, t.vote_question AS q, coalesce(vl.label, t.title, t.vote_desc) AS descr, t.vote_result AS result
+                  FROM inferred_alignment a LEFT JOIN rollcall_topic t USING (congress, chamber, rollnumber)
+                       LEFT JOIN vote_label vl ON vl.congress = a.congress AND vl.chamber = a.chamber AND vl.rollnumber = a.rollnumber
+                  WHERE a.bioguide = ? AND a.pac_6y >= 25000 AND NOT coalesce(""" + PROCEDURAL_SQL + ", false) AND (" + lobbied_sql("a") + " OR " + coded_sql("a") + ")")
         with_money = rows(con, base + " AND a.aligned = 1 ORDER BY a.p_exp ASC, a.pac_6y DESC LIMIT 8", [bg])
         against_money = rows(con, base + " AND a.aligned = 0 ORDER BY a.p_exp DESC, a.pac_6y DESC LIMIT 8", [bg])
     return {"summary": summ, "with_money": with_money, "against_money": against_money}
@@ -297,13 +361,14 @@ def member_donor_votes(bg: str):
         return rows(con, """
             SELECT strftime(a.vdate, '%Y-%m-%d') AS d, a.congress, a.chamber, a.rollnumber AS rn, a.bill, a.sector, a.subsector, a.helps_vote,
                    a.evidence_level, a.yea, a.aligned, round(a.pac_6y) AS pac_6y, round(a.pac_2y) AS pac_2y, round(a.share_6y, 3) AS share_6y,
-                   r.vote_question AS q, left(r.vote_desc, 110) AS desc, dir.evidence, dir.source_url,
+                   r.vote_question AS q, coalesce(left(r.vote_desc, 110), left(vl.label, 110)) AS desc, dir.evidence, dir.source_url,
                    v.district_view, v.with_district, round(v.est, 3) AS est, v.item, v."match" AS district_match
             FROM donor_alignment a
             JOIN c.rollcalls r ON r.congress = a.congress AND r.chamber = a.chamber AND r.rollnumber = a.rollnumber
             JOIN vote_direction dir ON dir.congress = a.congress AND dir.chamber = a.chamber AND dir.rollnumber = a.rollnumber
                  AND dir.sector = a.sector AND dir.subsector = a.subsector
             LEFT JOIN vote_vs_district v ON v.congress = a.congress AND v.chamber = a.chamber AND v.rollnumber = a.rollnumber AND v.bioguide = a.bioguide
+            LEFT JOIN vote_label vl ON vl.congress = a.congress AND vl.chamber = a.chamber AND vl.rollnumber = a.rollnumber
             WHERE a.bioguide = ? ORDER BY a.vdate, a.sector""", [bg])
 
 
@@ -326,9 +391,10 @@ def leaderboard(sector: str, source: str = "pac_direct", chamber: str = "", cong
 
 
 # defense-industry endpoints live in their own module (imported here so the helpers above exist, and before the static mount so the mount does not shadow them)
-from server import defense_api  # noqa: E402
+from server import defense_api, lobbying_api  # noqa: E402
 
 app.include_router(defense_api.router)
+app.include_router(lobbying_api.router)
 
 dist = ROOT / "web" / "dist"
 if dist.exists():

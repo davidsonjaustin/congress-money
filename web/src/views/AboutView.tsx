@@ -1,11 +1,37 @@
-import type { Definitions } from '../types'
+import { useEffect, useState } from 'react'
+import { api } from '../api'
+import type { Coverage, Definitions, FreshRow } from '../types'
 
 export default function AboutView({ defs }: { defs: Definitions }) {
+  const [cov, setCov] = useState<Coverage | null>(null)
+  const [fresh, setFresh] = useState<FreshRow[]>([])
+  useEffect(() => { api.scoreboard('all', 'All business').then((r) => setCov(r.coverage)).catch(() => undefined); api.freshness().then((r) => setFresh(r.sources)).catch(() => undefined) }, [])
+  const lm = cov?.landmark_by_match ?? {}
+  const documented = new Set(defs.direction.map((r) => `${r.congress}-${r.chamber}-${r.rollnumber}`)).size
   return (
     <div className="page">
       <div className="card prose">
-        <h2>How to read this</h2>
+        <h2>Sources, definitions and how recent the data is</h2>
         <p>This tool puts three things on one time axis: who funded a member, how that member voted, and what their district looks like. It shows associations. Nothing here proves that a donation changed a vote, and a vote that follows a donation is not evidence by itself. Members attract money from industries that already agree with them, so money and votes line up even if money does nothing.</p>
+
+        <h3>How recent each source is</h3>
+        <div className="scroll-x">
+          <table className="data">
+            <thead><tr><th style={{ textAlign: 'left' }}>Source</th><th>Data through</th><th style={{ textAlign: 'left' }}>Note</th></tr></thead>
+            <tbody>{fresh.map((f) => <tr key={f.source}><td style={{ textAlign: 'left' }}>{f.source}</td><td>{f.through ?? '–'}</td><td style={{ textAlign: 'left' }} className="hint">{f.note}</td></tr>)}</tbody>
+          </table>
+        </div>
+
+        <h3>Plain-language terms</h3>
+        <ul>
+          <li><strong>Funded vote</strong>: a vote where the industry had given the member $10,000 or more in PAC money in the six years before.</li>
+          <li><strong>Gap</strong> (shown as “points”, with a 90% range): how much more often a member voted the industry’s way than same-party colleagues with the same ideology and district would be expected to. “+10 points” means 10 more votes in 100.</li>
+          <li><strong>Same-party colleagues</strong> (“peers”): members of the member’s own party with similar ideology and a similar district, voting on the same roll calls. The expectation comes from how they voted, estimated without using that industry’s money.</li>
+          <li><strong>Documented side</strong>: the industry’s position on the vote is stated by the industry or a scorecard, or follows from the spending rule. <strong>Inferred side</strong>: the side is the one the money pulls toward, found from the pattern of votes and money across all members.</li>
+          <li><strong>Strong link</strong>: a vote where an industry’s money predicts the vote more strongly than 99.9% of what randomly shuffled money does.</li>
+          <li><strong>Strength</strong>: how many standard errors the link is from zero; about 3.1 is the line random money almost never crosses.</li>
+          <li><strong>Lobbied vote</strong>: a vote on a bill that at least two clients of that industry named in their Senate lobbying filings.</li>
+        </ul>
 
         <h3>What is shown</h3>
         <ul>
@@ -31,36 +57,30 @@ export default function AboutView({ defs }: { defs: Definitions }) {
         <p className="hint">{defs.lock.join(' · ')}</p>
 
         <h3>Landmark votes vs. the district</h3>
-        <p>For 39 well-known votes, the member page compares how the member voted with what their district (House) or state (Senate) said on the same question in the Cooperative Election Study, an online survey of about 55,000 people per year. A district’s support is estimated from its own respondents (about 120 per district per year) and pulled toward what its presidential vote and ideology predict, in proportion to how noisy its sample is. A vote counts as against constituents only when we are at least 90% sure which way the district leaned. Caveats: questions describe a bill in a sentence, often in its favor, which can push support up; the survey pool is an online panel, weighted; the 2014 ACA-repeal answers were coded backwards in the source file and are corrected here; “related” matches are shown faded and left out of the headline count. Bill-to-question matches were fixed from the bill’s identity before any estimate was made.</p>
-        <p className="hint">Almost every large gap is party-wide: for example, nearly all Republicans voted against background checks that most of their districts supported. That is evidence about parties and constituents, not about donors; donor tests come next.</p>
+        <p>
+          {cov ? <>For <strong>{lm.direct ?? 0}</strong> well-known votes with a matching survey question (plus <strong>{lm.related ?? 0}</strong> related ones shown faded), </> : 'For well-known votes with a matching survey question, '}
+          the member page compares how the member voted with what their district (House) or state (Senate) said on the same question in the Cooperative Election Study, an online survey of about 55,000 people per year. A district’s support is estimated from its own respondents (about 120 per district per year) and pulled toward what its presidential vote and ideology predict, in proportion to how noisy its sample is. A vote counts as against constituents only when we are at least 90% sure which way the district leaned. Caveats: questions describe a bill in a sentence, often in its favor, which can push support up; the survey pool is an online panel, weighted; the 2014 ACA-repeal answers were coded backwards in the source file and are corrected here; “related” matches are shown faded and left out of the headline count. Bill-to-question matches were fixed from the bill’s identity before any estimate was made.
+          {cov && lm.proxy ? <> A separate set of <strong>{lm.proxy}</strong> fossil-fuel votes is judged by one climate-opinion question (letting the EPA regulate CO2) used as a stand-in for every bill; it is a looser measure and is always labelled as a proxy.</> : null}
+        </p>
+        <p className="hint">Almost every large gap is party-wide: for example, nearly all Republicans voted against background checks that most of their districts supported. That is evidence about parties and constituents, not about donors; the donor tests are on the Findings page.</p>
 
-        <h3>Votes on the donors’ issues</h3>
-        <p>For a pilot set of {new Set(defs.direction.map((r) => `${r.congress}-${r.chamber}-${r.rollnumber}`)).size} votes, each has a documented side that helps a donor sector, taken from a trade group’s own statement or reporting on it (listed below). For each member who voted, the member page shows whether they voted that way and how much that sector’s PACs had given in the six years before. “Reported” means the position comes from secondary coverage or from a group’s scorecard rather than the group’s own words. Industries inside a sector are split where they want different things (for example, banks vs. insurers, oil and gas vs. electric utilities, drug makers vs. doctors).</p>
-        <p className="hint">What these coded votes show so far is summarized at the top of this page. Members from oil, coal and bank-heavy places also draw more of that money and have constituents who want those votes, so the numbers do not by themselves show money buying votes.</p>
-        <div className="scroll-x">
-          <table className="data">
-            <thead><tr><th>Vote</th><th style={{ textAlign: 'left' }}>Sector</th><th>Helps if</th><th style={{ textAlign: 'left' }}>Evidence</th><th>Level</th></tr></thead>
-            <tbody>
-              {defs.direction.map((r, i) => (
-                <tr key={i}>
-                  <td>{r.bill} {r.chamber.slice(0, 3)} {r.date}</td>
-                  <td style={{ textAlign: 'left' }}>{r.subsector ? r.subsector.replace('_', ' ') : r.sector}</td>
-                  <td>{r.helps_vote}</td>
-                  <td style={{ textAlign: 'left' }}><a href={r.source_url} target="_blank" rel="noopener noreferrer">{r.evidence}</a></td>
-                  <td>{r.evidence_level}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h3>Votes with a documented industry side</h3>
+        <p>
+          For <strong>{documented}</strong> votes, each has a documented side that helps a donor sector, taken from a trade group’s own statement, a scorecard, or (for defense spending bills) the fiscal effect of the vote. Every row, with its source and evidence level, is in the <a href="#/codebook">vote codebook</a>.
+          “Reported” means the position comes from secondary coverage or from a group’s scorecard rather than the group’s own words. Industries inside a sector are split where they want different things (for example, banks vs. insurers, oil and gas vs. electric utilities, drug makers vs. doctors).
+        </p>
+        <p className="hint">Members from oil, coal and bank-heavy places also draw more of that money and have constituents who want those votes, so the numbers do not by themselves show money buying votes.</p>
 
-        <h3>Not built yet</h3>
+        <h3>Corrections</h3>
+        <p>A wrong number is fixed by changing the data or the written rule that produces it, never by editing the page. Each result names the pipeline step behind it on the Findings page, and the rules were fixed in writing before the money-versus-vote models ran.</p>
+
+        <h3>Not covered yet</h3>
         <ul>
-          <li><strong>Lobbying</strong>: the Senate lobbying records are still downloading. They will show which bills each sector’s clients lobbied on and let interests be defined from lobbying, not from giving.</li>
-          <li><strong>Which way the industry wanted each vote</strong>: needs published scorecards and key-vote lists.</li>
-          <li><strong>District opinion on more bills</strong>: only 39 landmark votes are covered so far (see above); anything involving industry beyond finance, energy and health needs more survey questions.</li>
-          <li><strong>Family and personal finances</strong>: official disclosures and stock-trade reports.</li>
-          <li><strong>Tests</strong>: before-vs-after timing, placebo sectors, matched comparisons and sensitivity bounds. Until these exist, the charts are for exploring, not for conclusions.</li>
+          <li><strong>Individual donors and outside spending in the scores</strong>: only direct PAC gifts are scored. Most individual dollars and super-PAC dollars cannot yet be assigned to an industry (the shares are above).</li>
+          <li><strong>Lobbying and government funding outside defense</strong>: lobbying is used to pick the votes an industry cared about, but spending, targets and contracts are only broken out for defense.</li>
+          <li><strong>The executive branch</strong>: donors to presidential campaigns, their super PACs and inaugural committees are not yet linked to executive actions.</li>
+          <li><strong>Members’ own finances</strong>: stock-trade and asset disclosures, and earmarks.</li>
+          <li><strong>District opinion on most bills</strong>: only the landmark votes above are covered.</li>
         </ul>
       </div>
     </div>

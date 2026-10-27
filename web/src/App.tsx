@@ -10,8 +10,11 @@ import LeaderboardView from './views/LeaderboardView'
 import MethodView from './views/MethodView'
 import AllVotesView from './views/AllVotesView'
 import DefenseView from './views/DefenseView'
+import CodebookView from './views/CodebookView'
+import AboutView from './views/AboutView'
+import LobbyingView from './views/LobbyingView'
 
-type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method' | 'votes' | 'defense'; id: string }
+type Route = { page: 'score' | 'case' | 'explore' | 'sectors' | 'method' | 'votes' | 'defense' | 'codebook' | 'about' | 'lobbying'; id: string }
 
 function parse(hash: string): Route {
   const [, page, id] = hash.replace(/^#/, '').split('/')
@@ -21,6 +24,9 @@ function parse(hash: string): Route {
   if (page === 'method') return { page: 'method', id: '' }
   if (page === 'votes') return { page: 'votes', id: '' }
   if (page === 'defense') return { page: 'defense', id: '' }
+  if (page === 'codebook') return { page: 'codebook', id: '' }
+  if (page === 'about') return { page: 'about', id: '' }
+  if (page === 'lobbying') return { page: 'lobbying', id: '' }
   return { page: 'score', id: '' }
 }
 
@@ -54,8 +60,8 @@ export default function App() {
 
   if (err) return <div className="card" style={{ margin: 24 }}>Could not reach the data server ({err}). Start it with <code>run.bat</code>.</div>
 
-  const tabs: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'], ['defense', 'Defense', '#/defense'], ['votes', 'Every vote', '#/votes'], ['explore', 'Explore the data', '#/explore'],
-    ['sectors', 'Sector money', '#/sectors'], ['method', 'Findings & method', '#/method']]
+  const tabs: [Route['page'], string, string][] = [['score', 'Scoreboard', '#/'], ['case', 'Case file', route.id ? `#/case/${route.id}` : '#/'], ['lobbying', 'Lobbying', '#/lobbying'], ['defense', 'Defense', '#/defense'], ['votes', 'Every vote', '#/votes'], ['explore', 'Explore the data', '#/explore'],
+    ['sectors', 'Sector money', '#/sectors'], ['method', 'Findings & method', '#/method'], ['about', 'Sources', '#/about']]
   return (
     <div className="app">
       <header className="topbar">
@@ -100,6 +106,9 @@ export default function App() {
       {route.page === 'sectors' && defs && <main className="main"><LeaderboardView defs={defs} onOpen={(id) => go(`#/case/${id}`)} /></main>}
       {route.page === 'defense' && <main className="main"><DefenseView onOpen={(id) => go(`#/case/${id}`)} /></main>}
       {route.page === 'votes' && <main className="main"><AllVotesView /></main>}
+      {route.page === 'lobbying' && <main className="main"><LobbyingView /></main>}
+      {route.page === 'about' && defs && <main className="main"><AboutView defs={defs} /></main>}
+      {route.page === 'codebook' && defs && <main className="main"><CodebookView defs={defs} /></main>}
       {route.page === 'method' && defs && <main className="main"><MethodView defs={defs} /></main>}
     </div>
   )

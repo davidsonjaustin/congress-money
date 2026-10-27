@@ -3,7 +3,7 @@ import * as d3 from 'd3'
 import { api } from '../api'
 import type { Constituent, DefMember, DefState, Definitions, DonorVote, InferredVote, MemberInferred, Profile, Scored, SectorLine } from '../types'
 import { useWidth } from '../hooks'
-import { fmtLift, fmtMoney, liftRange, ordinal } from '../util'
+import { fmtLift, fmtMoney, industryName, liftRange, ordinal, shortName } from '../util'
 import { ConstituentsCard, DonorVotesCard } from './MemberView'
 
 type Props = { id: string; defs: Definitions; onExplore: (id: string) => void }
@@ -14,7 +14,6 @@ function verdictWord(ix: number): string {
 
 export default function CaseFile({ id, defs, onExplore }: Props) {
   const [me, setMe] = useState<Scored | null>(null)
-  const [labor, setLabor] = useState<Scored | null>(null)
   const [ranked, setRanked] = useState<Scored[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [votes, setVotes] = useState<DonorVote[]>([])
@@ -34,10 +33,9 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
 
   useEffect(() => {
     let alive = true
-    Promise.all([api.scoreboard('all', 'All business'), api.profile(id), api.donorVotes(id), api.sectors(id), api.constituents(id), api.scoreboard('all', 'Labor')]).then(([b, p, v, s, c, lb]) => {
+    Promise.all([api.scoreboard('all', 'All business'), api.profile(id), api.donorVotes(id), api.sectors(id), api.constituents(id)]).then(([b, p, v, s, c]) => {
       if (!alive) return
       setMe(b.members.find((m) => m.id === id) ?? null)
-      setLabor(lb.members.find((m) => m.id === id) ?? null)
       setRanked(b.members.filter((m) => m.ranked && m.index != null))
       setProfile(p); setVotes(v); setSectors(s); setCons(c)
       const best = [...s].sort((a, b) => (b.votes >= 2 ? b.money : 0) - (a.votes >= 2 ? a.money : 0))[0]
@@ -67,6 +65,11 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
   const selVotes = votes.filter((v) => `${v.sector}|${v.subsector}` === sel)
   const donorMax = donors[0]?.[1] ?? 1
   const story = buildStory({ name: profile.name, me, sectors, votes })
+  const who = shortName(profile.name, last.chamber)
+  const everyAll = inf?.summary.find((x) => x.label === 'All business') ?? null
+  const headline = isRanked && me!.lift != null
+    ? { lift: me!.lift, se: me!.se, source: 'industry side documented' }
+    : everyAll && everyAll.lift != null ? { lift: everyAll.lift, se: everyAll.se, source: 'every vote since 2008' } : null
 
   return (
     <div className="page">
@@ -85,41 +88,56 @@ export default function CaseFile({ id, defs, onExplore }: Props) {
 
       <div className="card verdict">
         <div className="vleft">
-          {isRanked ? (
+          {headline ? (
             <>
-              <div className="vtier" style={{ borderColor: 'var(--s2)' }}>{me!.n_funded_aligned} of {me!.n_funded}</div>
-              <div className="vlbl">money-backed votes cast the industry’s way</div>
-              <div className="vrange">{fmtMoney(me!.money_at_stake ?? 0)} from {me!.top_sectors || 'these industries'}</div>
+              <div className="vtier" style={{ borderColor: headline.lift >= 0 ? 'var(--s2)' : 'var(--s3)' }}>{fmtLift(headline.lift)}</div>
+              <div className="vlbl">{headline.lift >= 0 ? 'more often' : 'less often'} than same-party colleagues have voted with the industries funding them</div>
+              <div className="vrange">{liftRange(headline.lift, headline.se)} · {headline.source}</div>
             </>
           ) : (
             <div className="vtier" style={{ borderColor: 'var(--muted)' }}>Not ranked yet</div>
           )}
         </div>
         <div className="vright">
-          {story.length > 0 && <div className="story">{story.map((p, i) => <p key={i}>{p}</p>)}</div>}
-          {isRanked ? (
+          {headline ? (
             <>
               <p className="lead">
-                On votes where a business sector clearly won or lost and had given {profile.name.split(' ')[0]} $10K or more in the prior six years, they voted its way{' '}
-                <strong>{me!.n_funded_aligned} of {me!.n_funded}</strong> times.
+                Two ways of asking the same question for {who}. Each counts votes where an industry had given $10K or more in PAC money in the prior six years, and compares how often the vote went the industry’s way with how often
+                same-party colleagues with the same ideology and district would be expected to. A small gap does not clear a member: their whole party may be funded by the same industries.
               </p>
-              <ul className="facts">
-                <li>Check, is it just their politics? Same-party colleagues with the same ideology and district would be expected to vote the industries’ way on about <strong>{(me!.peers_funded_aligned ?? 0).toFixed(1)}</strong> of those. The gap is <strong>{liftRange(me!.lift, me!.se)}</strong>{Math.abs(me!.z ?? 0) < 1.5 ? ' (small enough that chance could explain it)' : ''}. A small gap does not clear a member: their whole party may be funded by the same industries.</li>
-                {labor?.ranked && labor.index != null ? <li>Labor unions: voted the unions’ way on <strong>{labor.n_funded_aligned} of {labor.n_funded}</strong> votes where union PACs had given $10K or more; same-party peers would be expected to on about <strong>{(labor.peers_funded_aligned ?? 0).toFixed(1)}</strong> (labor index <strong>{labor.index.toFixed(0)}</strong>).</li> : null}
-                {me!.const_votes ? <li>On {me!.const_votes} landmark votes with a clear district majority, voted <strong>against</strong> that majority {me!.const_against} times{(me!.donors_over_district ?? 0) + (me!.district_over_donors ?? 0) > 0 ? `; sided with donors over the district ${me!.donors_over_district} time(s) and with the district over donors ${me!.district_over_donors}` : ''}.</li> : null}
-              </ul>
+              <div className="scroll-x">
+                <table className="data">
+                  <thead><tr><th style={{ textAlign: 'left' }}>Measure</th><th>Funded votes</th><th>Voted its way</th><th>Colleagues would</th><th>Gap (90% range)</th></tr></thead>
+                  <tbody>
+                    {isRanked && me && (
+                      <tr>
+                        <td style={{ textAlign: 'left' }}>Industry’s side documented<div className="hint">from its own statements, scorecards or the spending rule</div></td>
+                        <td>{me.n_funded}</td><td>{me.n_funded_aligned}</td><td>{(me.peers_funded_aligned ?? 0).toFixed(1)}</td>
+                        <td>{liftRange(me.lift, me.se)}{Math.abs(me.z ?? 0) < 1.5 ? <div className="hint">small enough that chance could explain it</div> : null}</td>
+                      </tr>
+                    )}
+                    {everyAll && (
+                      <tr>
+                        <td style={{ textAlign: 'left' }}>Every vote since 2008<div className="hint">side inferred from where the money pulls</div></td>
+                        <td>{everyAll.n_funded}</td><td>{everyAll.n_funded_aligned}</td><td>{everyAll.expected.toFixed(1)}</td>
+                        <td>{liftRange(everyAll.lift, everyAll.se)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </>
           ) : (
             <p className="lead">
-              {me?.votes_coded ? `Only ${me.votes_coded} coded vote(s) and not enough sector money behind them to rank.` : 'None of the votes coded so far involved this member.'} Rankings need at least about three votes where a funding sector had given real money. More coded votes will change this.
-              {me?.const_votes ? ` On ${me.const_votes} landmark votes with a clear district majority, they went against it ${me.const_against} times.` : ''}
-              {labor?.ranked && labor.index != null ? ` Labor unions: voted the unions’ way on ${labor.n_funded_aligned} of ${labor.n_funded} votes where union PACs had given $10K or more (labor index ${labor.index.toFixed(0)}).` : ''}
+              {me?.votes_coded ? `Only ${me.votes_coded} vote(s) with a documented industry side and not enough sector money behind them to rank.` : 'No vote with a documented industry side involves this member.'} Rankings need at least about three such votes with real money behind them.
             </p>
           )}
+          {story.length > 0 && <div className="story">{story.map((p, i) => <p key={i}>{p}</p>)}</div>}
         </div>
       </div>
 
-      {inf && inf.summary.length > 0 && <EveryVoteCard inf={inf} name={profile.name} />}
+      <IndustryTable sectors={sectors} inf={inf} />
+      {inf && <EveryVoteCard inf={inf} />}
       {dm && ((dm.pac_all ?? 0) >= 25000 || dm.n >= 5) && <DefenseCard m={dm} states={dStates} />}
 
       {donors.length > 0 && (
@@ -223,42 +241,54 @@ function BeforeAfter({ line, votes }: { line: SectorLine; votes: DonorVote[] }) 
 }
 
 function buildStory(a: { name: string; me: Scored | null; sectors: SectorLine[]; votes: DonorVote[] }): string[] {
-  const first = a.name.split(' ')[0]
   const out: string[] = []
-  const lines = a.sectors.filter((s) => s.n_funded >= 3).sort((x, y) => y.money - x.money)
-  for (const s of lines.slice(0, 2)) {
-    out.push(`The ${s.label} industry had given ${first} ${fmtMoney(s.money)} in PAC money; on ${s.n_funded} votes where it had given $10K or more and had a clear side, ${first} voted its way ${s.n_aligned} times.`)
-  }
   const ex = a.votes.filter((v) => v.district_match === 'direct' && v.aligned === 1 && v.with_district === 0).sort((x, y) => y.pac_6y - x.pac_6y).slice(0, 3)
   if (ex.length) out.push(`Votes with the industry against what a clear majority at home wanted include: ${ex.map((v) => `${(v.desc || v.q || v.bill || '').slice(0, 55)} (${v.d.slice(0, 4)}, ${fmtMoney(v.pac_6y)} from the industry)`).join('; ')}.`)
   const rev = a.votes.filter((v) => v.district_match === 'direct' && v.aligned === 0 && v.with_district === 1 && v.pac_6y >= 25000).sort((x, y) => y.pac_6y - x.pac_6y).slice(0, 2)
   if (rev.length) out.push(`Votes against a funding industry, with their district, despite its money include: ${rev.map((v) => `${(v.desc || v.q || v.bill || '').slice(0, 55)} (${v.d.slice(0, 4)}, ${fmtMoney(v.pac_6y)} from the industry)`).join('; ')}.`)
-  const px = a.votes.filter((v) => v.district_match === 'proxy' && v.district_view === 'supports')
-  if (px.length >= 5) {
-    const pAgainst = px.filter((v) => v.aligned === 1 && v.with_district === 0).length
-    out.push(`On ${px.length} fossil votes, a clear majority in ${first}’s district backed letting the EPA regulate CO2 (a general stand-in, not a poll on each bill). ${first} sided with the industry against that view on ${pAgainst} of them.`)
-  }
-  const top = [...a.sectors].sort((x, y) => y.votes - x.votes)[0]
-  if (top) {
-    const sv = a.votes.filter((v) => v.sector === top.sector && v.subsector === top.subsector)
-    const lo = sv.filter((v) => v.pac_6y < 25000), hi = sv.filter((v) => v.pac_6y >= 25000)
-    if (lo.length >= 3 && hi.length >= 3) {
-      const c = (x: DonorVote[]) => `${x.filter((v) => v.aligned === 1).length} of ${x.length}`
-      out.push(`Before the ${top.label} industry had given $25K, ${first} voted its way ${c(lo)} times; once it had, ${c(hi)}.`)
-    }
-  }
   return out
+}
+
+/** One row per industry: money, then how the member voted on the documented-side votes and on the every-vote set, each next to what politics predicts. */
+function IndustryTable({ sectors, inf }: { sectors: SectorLine[]; inf: MemberInferred | null }) {
+  const doc = new Map(sectors.map((s) => [s.label, s]))
+  const evr = new Map((inf?.summary ?? []).filter((s) => s.label !== 'All business').map((s) => [s.label, s]))
+  const labels = [...new Set([...doc.keys(), ...evr.keys()])]
+    .map((l) => ({ l, d: doc.get(l), e: evr.get(l) }))
+    .filter((r) => (r.d?.n_funded ?? 0) >= 3 || (r.e?.n_funded ?? 0) >= 5)
+    .map((r) => ({ ...r, money: Math.max(r.d?.money ?? 0, r.e?.money ?? 0) }))
+    .sort((x, y) => y.money - x.money)
+    .slice(0, 10)
+  if (labels.length === 0) return null
+  const cell = (n: number | undefined, of: number | undefined, exp: number | undefined) => (of ? <>{n} of {of}<div className="hint">colleagues would: {(exp ?? 0).toFixed(0)}</div></> : '–')
+  return (
+    <div className="card">
+      <h2>Industry by industry</h2>
+      <div className="sub">PAC money is the most the industry gave this member in any six-year window. “Colleagues would” is how many of those votes same-party colleagues with the same ideology and district would be expected to cast the industry’s way.</div>
+      <div className="scroll-x">
+        <table className="data">
+          <thead><tr><th style={{ textAlign: 'left' }}>Industry</th><th>PAC money, most in any 6 years</th><th>Documented side: voted its way</th><th>Every vote: voted with the money</th></tr></thead>
+          <tbody>
+            {labels.map((r) => (
+              <tr key={r.l}>
+                <td style={{ textAlign: 'left' }}>{industryName(r.l)}</td>
+                <td>{fmtMoney(r.money)}</td>
+                <td>{cell(r.d?.n_aligned, r.d?.n_funded, r.d?.peers_aligned)}</td>
+                <td>{cell(r.e?.n_funded_aligned, r.e?.n_funded, r.e?.expected)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 function voteTitle(v: InferredVote): string {
   return (v.descr || v.q || v.bill || 'Vote').slice(0, 110)
 }
 
-function EveryVoteCard({ inf, name }: { inf: MemberInferred; name: string }) {
-  const first = name.split(' ')[0]
-  const all = inf.summary.find((s) => s.label === 'All business')
-  const lines = inf.summary.filter((s) => s.label !== 'All business' && s.n_funded >= 5).slice(0, 8)
-  const nice = (l: string) => (l === 'Labor' ? 'Labor unions' : l === 'oil gas' ? 'Oil and gas' : l.replace(/^./, (c) => c.toUpperCase()))
+function EveryVoteCard({ inf }: { inf: MemberInferred }) {
   const list = (title: string, blurb: string, rows: InferredVote[]) => rows.length > 0 && (
     <div>
       <div className="fh">{title}</div>
@@ -266,39 +296,23 @@ function EveryVoteCard({ inf, name }: { inf: MemberInferred; name: string }) {
       <ul className="facts">
         {rows.map((v) => (
           <li key={`${v.congress}${v.chamber}${v.rollnumber}${v.label}`}>
-            {voteTitle(v)} <span className="hint">({v.d?.slice(0, 4)}, {v.chamber}{v.bill ? `, ${v.bill}` : ''})</span>: {nice(v.label)} industry had given {fmtMoney(v.pac_6y)}; ideology and district alone put the chance of voting that way at {Math.round(100 * v.p_exp)}%.
+            {voteTitle(v)} <span className="hint">({v.d?.slice(0, 4)}, {v.chamber}{v.bill ? `, ${v.bill}` : ''})</span>: {industryName(v.label)} had given {fmtMoney(v.pac_6y)}; ideology and district alone put the chance of voting that way at {Math.round(100 * v.p_exp)}%.
           </li>
         ))}
       </ul>
     </div>
   )
+  if (inf.with_money.length === 0 && inf.against_money.length === 0) return null
   return (
     <div className="card">
-      <h2>Every vote since 2008</h2>
+      <h2>Votes that stand out</h2>
       <div className="sub">
-        Votes where an industry’s money lined up strongly with how members voted, taking the side that money pulls toward. That side is inferred from the money pattern, not stated by the industry.
+        Among votes the industry lobbied or whose side is documented, and where its money lined up with the vote, these are the ones where the member’s vote was least or most expected from their ideology and district.
+        Where the side is inferred from the money pattern it is not stated by the industry. Procedural votes are left out.
       </div>
-      {all && (
-        <p className="lead">
-          On <strong>{all.n_funded}</strong> such votes where a business industry had given {first} $10K or more, they voted the way the money pulls <strong>{all.n_funded_aligned}</strong> times.
-          Their ideology, party and district alone would predict about <strong>{all.expected.toFixed(0)}</strong>. Gap: <strong>{liftRange(all.lift, all.se)}</strong>.
-        </p>
-      )}
-      {lines.length > 0 && (
-        <div className="scroll-x">
-          <table className="data">
-            <thead><tr><th style={{ textAlign: 'left' }}>Industry</th><th>Money, 6-year peak</th><th>Voted with the money</th><th>Predicted by ideology and district</th></tr></thead>
-            <tbody>
-              {lines.map((s) => (
-                <tr key={s.label}><td style={{ textAlign: 'left' }}>{nice(s.label)}</td><td>{fmtMoney(s.money)}</td><td>{s.n_funded_aligned} of {s.n_funded}</td><td>{s.expected.toFixed(0)}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
       <div className="threecol" style={{ marginTop: 12 }}>
-        {list('Voted with the money against their profile', 'Industry gave $25K or more, and ideology and district made this vote unlikely.', inf.with_money)}
-        {list('Voted against the money despite it', 'Industry gave $25K or more, and ideology and district made voting with it likely.', inf.against_money)}
+        {list('Voted with the money, against their profile', 'Industry gave $25K or more, and ideology and district made this vote unlikely.', inf.with_money)}
+        {list('Voted against the money, despite it', 'Industry gave $25K or more, and ideology and district made voting with it likely.', inf.against_money)}
       </div>
     </div>
   )

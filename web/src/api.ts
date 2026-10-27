@@ -1,4 +1,4 @@
-import type { AllVotesSummary, PromisesData, WarData, DefMember, DefOverview, DefRevolving, DefState, MemberInferred, Constituent, Definitions, DonorVote, MethodData, Scoreboard, TopVotes, SectorLine, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
+import type { AllVotesSummary, FreshRow, LobOverview, LobSector, PromisesData, WarData, DefMember, DefOverview, DefRevolving, DefState, MemberInferred, Constituent, Definitions, DonorVote, MethodData, Scoreboard, TopVotes, SectorLine, LeaderRow, MemberRow, MoneyRow, Profile, Vote } from './types'
 
 const cache = new Map<string, Promise<unknown>>()
 function get<T>(url: string): Promise<T> {
@@ -16,6 +16,9 @@ function get<T>(url: string): Promise<T> {
 
 export const api = {
   members: () => get<MemberRow[]>('/api/members'),
+  lobOverview: () => get<LobOverview>('/api/lobbying/overview'),
+  lobSector: (sector: string) => get<LobSector>(`/api/lobbying/sector?sector=${encodeURIComponent(sector)}`),
+  freshness: () => get<{ sources: FreshRow[] }>('/api/freshness'),
   definitions: () => get<Definitions>('/api/definitions'),
   profile: (id: string) => get<Profile>(`/api/member/${id}`),
   money: (id: string) => get<MoneyRow[]>(`/api/member/${id}/money`),
@@ -30,7 +33,7 @@ export const api = {
   defWar: () => get<WarData>('/api/defense/war'),
   defPromises: () => get<PromisesData>('/api/defense/promises'),
   allVotesSummary: () => get<AllVotesSummary>('/api/allvotes/summary'),
-  allVotesTop: (label: string, minT: number, limit: number) => get<TopVotes>(`/api/allvotes/top?label=${encodeURIComponent(label)}&min_t=${minT}&limit=${limit}`),
+  allVotesTop: (label: string, minT: number, limit: number, scope: 'linked' | 'all' = 'linked') => get<TopVotes>(`/api/allvotes/top?label=${encodeURIComponent(label)}&min_t=${minT}&limit=${limit}&scope=${scope}`),
   sectors: (id: string) => get<SectorLine[]>(`/api/member/${id}/sectors`),
   donorVotes: (id: string) => get<DonorVote[]>(`/api/member/${id}/donor_votes`),
   constituents: (id: string) => get<Constituent[]>(`/api/member/${id}/constituents`),

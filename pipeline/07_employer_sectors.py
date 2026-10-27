@@ -78,11 +78,21 @@ OCC_RULES = [
 ]
 NOT_IDENTIFIABLE = "Not identifiable (retired / unemployed / no employer)"
 
+# Hand labels for the largest employers the keyword rules missed (definitions/employer_overrides.csv: employer, sector, basis). They win over every rule.
+_OV = Path(__file__).with_name("definitions") / "employer_overrides.csv"
+OVERRIDES: dict[str, str] = {}
+if _OV.exists():
+    import csv as _csv
+    with _OV.open(encoding="utf-8", newline="") as _f:
+        OVERRIDES = {r["employer"].strip().upper(): r["sector"] for r in _csv.DictReader(_f)}
+
 
 def classify(employer: str, occupation: str) -> tuple[str, str]:
     emp = (employer or "").strip().upper()
     occ = (occupation or "").strip().upper()
     informative = bool(emp) and not NO_INFO.match(emp)
+    if emp in OVERRIDES:
+        return OVERRIDES[emp], "employer:hand-labeled"
     if informative:
         for sector, r in EMP_RULES:
             m = r.search(emp)
